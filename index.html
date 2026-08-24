@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storybook Studio — marketing &amp; positioning for authorial work</title>
+<meta name="description" content="Storybook Studio helps founders doing complex, personal work translate their story into positioning, messaging and communication guidelines.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1;1,9..144,300..700,0..100,0..1&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="noise-overlay" aria-hidden="true"></div>
+
+<header class="hero">
+  <img class="logo" src="logo.png" alt="Storybook Studio">
+</header>
+
+<main class="cabinet">
+
+  <!-- ============ PROJECTS ============ -->
+  <section class="folder" data-color="purple" style="--folder-index:0; --tab-offset:6%;">
+    <div class="papers-peek" aria-hidden="true">
+      <div class="paper gray"  style="left:4%;  transform:rotate(-7deg);"></div>
+      <div class="paper black" style="left:34%; transform:rotate(4deg); height:78px; bottom:-6px;"></div>
+      <div class="paper white" style="left:56%; transform:rotate(-4deg); height:104px;"></div>
+    </div>
+
+    <div class="tab-shape" aria-hidden="true">
+      <svg viewBox="0 0 220 88" preserveAspectRatio="none"><path d="M0,88 L0,34 C0,14 10,6 30,6 L120,6 C150,6 152,10 168,26 C186,44 200,66 220,88 Z" fill="currentColor"/></svg>
+    </div>
+    <div class="tab-label-row" aria-hidden="true">
+      <span class="tab-label">Projects</span>
+      <span class="tab-icon"></span>
+    </div>
+
+    <button class="tab-button" id="tab-projects" aria-expanded="false" aria-controls="panel-projects">
+      <span class="shelf-rest"></span>
+    </button>
+
+    <div class="panel" id="panel-projects" role="region" aria-labelledby="tab-projects" inert>
+      <div class="panel-inner">
+        <div class="panel-content">
+          <p class="eyebrow">Selected work</p>
+          <div class="case-grid">
+            <article class="paper-card case-card" style="--card-rot:-1deg; --card-index:0;">
+              <h3>Client name — project type</h3>
+              <p>One line on what changed: the before, the after, the shift in how they were understood.</p>
+              <span class="tag">Positioning</span>
+            </article>
+            <article class="paper-card case-card" style="--card-rot:0.8deg; --card-index:1;">
+              <h3>Client name — project type</h3>
+              <p>One line on what changed: the before, the after, the shift in how they were understood.</p>
+              <span class="tag">Brand voice</span>
+            </article>
+            <article class="paper-card case-card" style="--card-rot:-0.6deg; --card-index:2;">
+              <h3>Client name — project type</h3>
+              <p>One line on what changed: the before, the after, the shift in how they were understood.</p>
+              <span class="tag">Launch</span>
+            </article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="folder" data-color="green" style="--folder-index:1; --tab-offset:30%;">
+    <div class="papers-peek" aria-hidden="true">
+      <div class="paper black" style="left:8%;  transform:rotate(-3deg); height:100px;"></div>
+      <div class="paper white" style="left:58%; transform:rotate(5deg);"></div>
+    </div>
+
+    <div class="tab-shape" aria-hidden="true">
+      <svg viewBox="0 0 220 88" preserveAspectRatio="none"><path d="M0,88 L0,34 C0,14 10,6 30,6 L120,6 C150,6 152,10 168,26 C186,44 200,66 220,88 Z" fill="currentColor"/></svg>
+    </div>
+    <div class="tab-label-row" aria-hidden="true">
+      <span class="tab-label">Contact</span>
+      <span class="tab-icon"></span>
+    </div>
+
+    <button class="tab-button" id="tab-contact" aria-expanded="false" aria-controls="panel-contact">
+      <span class="shelf-rest"></span>
+    </button>
+
+    <div class="panel" id="panel-contact" role="region" aria-labelledby="tab-contact" inert>
+      <div class="panel-inner">
+        <div class="panel-content">
+          <div class="paper-card" style="--card-rot:-0.5deg; --card-index:0;">
+            <h3>Start a chapter</h3>
+            <p>Tell me a little about what you're building — I read every message myself.</p>
+            <form class="contact-form" id="contact-form">
+              <div class="field">
+                <label for="f-name">Name</label>
+                <input id="f-name" name="name" type="text" autocomplete="name" required>
+              </div>
+              <div class="field">
+                <label for="f-email">Email</label>
+                <input id="f-email" name="email" type="email" autocomplete="email" required>
+              </div>
+              <div class="field">
+                <label for="f-message">Message</label>
+                <textarea id="f-message" name="message" rows="4" required></textarea>
+              </div>
+              <button type="submit" class="send-btn">Send</button>
+            </form>
+            <p class="contact-alt">Or write straight to <a href="mailto:chapter@storybookstudio.com">chapter@storybookstudio.com</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="folder" data-color="maroon" style="--folder-index:2; --tab-offset:10%;">
+    <div class="papers-peek" aria-hidden="true">
+      <div class="paper gray"  style="left:10%; transform:rotate(8deg);"></div>
+      <div class="paper white" style="left:52%; transform:rotate(-5deg); height:108px;"></div>
+    </div>
+
+    <div class="tab-shape" aria-hidden="true">
+      <svg viewBox="0 0 220 88" preserveAspectRatio="none"><path d="M0,88 L0,34 C0,14 10,6 30,6 L120,6 C150,6 152,10 168,26 C186,44 200,66 220,88 Z" fill="currentColor"/></svg>
+    </div>
+    <div class="tab-label-row" aria-hidden="true">
+      <span class="tab-label">About</span>
+      <span class="tab-icon"></span>
+    </div>
+
+    <button class="tab-button" id="tab-about" aria-expanded="false" aria-controls="panel-about">
+      <span class="shelf-rest"></span>
+    </button>
+
+    <div class="panel" id="panel-about" role="region" aria-labelledby="tab-about" inert>
+      <div class="panel-inner">
+        <div class="panel-content">
+          <div class="paper-card" style="--card-rot:0.6deg; --card-index:0;">
+            <h3>About Miren</h3>
+            <p class="lede">I translate between what people make and how the world understands it.</p>
+            <p>Storybook Studio is run by Miren Arregui, who spent six years building other people's marketing before leaving to build her own practice.</p>
+            <p>She works with founders doing complex, personal, hard-to-summarize work — the kind that gets lost in translation between what someone makes and how the world is supposed to understand it. That gap is the whole job.</p>
+            <p>Based in Norway, after Spain. Writing in English, thinking in chapters.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SERVICES ============ -->
+  <section class="folder" data-color="periwinkle" style="--folder-index:3; --tab-offset:34%;">
+    <div class="papers-peek" aria-hidden="true">
+      <div class="paper white"  style="left:2%;  transform:rotate(-7deg);"></div>
+      <div class="paper maroon-accent" style="left:36%; transform:rotate(3deg); width:22%; height:70px; bottom:-2px;"></div>
+      <div class="paper white"  style="left:60%; transform:rotate(6deg); height:100px;"></div>
+    </div>
+
+    <div class="tab-shape" aria-hidden="true">
+      <svg viewBox="0 0 220 88" preserveAspectRatio="none"><path d="M0,88 L0,34 C0,14 10,6 30,6 L120,6 C150,6 152,10 168,26 C186,44 200,66 220,88 Z" fill="currentColor"/></svg>
+    </div>
+    <div class="tab-label-row" aria-hidden="true">
+      <span class="tab-label">Services</span>
+      <span class="tab-icon"></span>
+    </div>
+
+    <button class="tab-button" id="tab-services" aria-expanded="false" aria-controls="panel-services">
+      <span class="shelf-rest"></span>
+    </button>
+
+    <div class="panel" id="panel-services" role="region" aria-labelledby="tab-services" inert>
+      <div class="panel-inner">
+        <div class="panel-content">
+          <p class="eyebrow">How we might work together</p>
+          <div class="service-list">
+            <div class="paper-card service-item" style="--card-rot:-0.7deg; --card-index:0;">
+              <h3><span class="num">01</span>Positioning</h3>
+              <p>Finding the true, specific version of what you do — and the language that makes it land.</p>
+            </div>
+            <div class="paper-card service-item" style="--card-rot:0.5deg; --card-index:1;">
+              <h3><span class="num">02</span>Voice &amp; messaging</h3>
+              <p>Turning positioning into words you'll actually use — on the site, in the deck, in the DM.</p>
+            </div>
+            <div class="paper-card service-item" style="--card-rot:-0.4deg; --card-index:2;">
+              <h3><span class="num">03</span>Communication guidelines</h3>
+              <p>A living reference so the story stays consistent after the project ends.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROCESS ============ -->
+  <section class="folder" data-color="black" style="--folder-index:4; --tab-offset:42%;">
+    <div class="papers-peek" aria-hidden="true">
+      <div class="paper white" style="left:6%;  transform:rotate(-5deg);"></div>
+      <div class="paper gray"  style="left:56%; transform:rotate(5deg); height:100px;"></div>
+    </div>
+
+    <div class="tab-shape" aria-hidden="true">
+      <svg viewBox="0 0 220 88" preserveAspectRatio="none"><path d="M0,88 L0,34 C0,14 10,6 30,6 L120,6 C150,6 152,10 168,26 C186,44 200,66 220,88 Z" fill="currentColor"/></svg>
+    </div>
+    <div class="tab-label-row" aria-hidden="true">
+      <span class="tab-label">Process</span>
+      <span class="tab-icon"></span>
+    </div>
+
+    <button class="tab-button" id="tab-process" aria-expanded="false" aria-controls="panel-process">
+      <span class="shelf-rest"></span>
+    </button>
+
+    <div class="panel" id="panel-process" role="region" aria-labelledby="tab-process" inert>
+      <div class="panel-inner">
+        <div class="panel-content">
+          <div class="chapter-list">
+            <div class="chapter-item paper-card" style="--card-rot:-0.5deg; --card-index:0;">
+              <span class="chapter-mark">I.</span>
+              <div><h3>We talk</h3><p>An honest conversation about what you make and who keeps misunderstanding it.</p></div>
+            </div>
+            <div class="chapter-item paper-card" style="--card-rot:0.4deg; --card-index:1;">
+              <span class="chapter-mark">II.</span>
+              <div><h3>I translate</h3><p>Your story, restructured into positioning that holds up under pressure.</p></div>
+            </div>
+            <div class="chapter-item paper-card" style="--card-rot:-0.3deg; --card-index:2;">
+              <span class="chapter-mark">III.</span>
+              <div><h3>You get the pages</h3><p>Guidelines and messaging you can hand to anyone and trust they'll get it right.</p></div>
+            </div>
+            <div class="chapter-item paper-card" style="--card-rot:0.6deg; --card-index:3;">
+              <span class="chapter-mark">IV.</span>
+              <div><h3>The story keeps going</h3><p>Check-ins as things grow, so the narrative never falls out of date.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>© Storybook Studio</p>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
