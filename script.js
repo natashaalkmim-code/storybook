@@ -135,7 +135,7 @@
       requestAnimationFrame(function () {
         openLayer.classList.add('is-open');
         if (!reduceMotion) {
-          window.setTimeout(function () { openClose.focus({ preventScroll: true }); }, 520);
+          window.setTimeout(function () { openClose.focus({ preventScroll: true }); }, 780);
         } else {
           openClose.focus({ preventScroll: true });
         }
@@ -164,7 +164,7 @@
 
       activeButton = null;
       activeFolder = null;
-    }, reduceMotion ? 20 : 930);
+    }, reduceMotion ? 20 : 1100);
   }
 
   /* The initial cover already exists on frame 1; it only settles physically. */
