@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storybook Studio</title>
+<meta name="description" content="Storybook Studio — marketing, positioning and communication for authorial work.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..700,0..100,0..1;1,9..144,300..700,0..100,0..1&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="noise-overlay" aria-hidden="true"></div>
+
+  <!-- The composition is intentionally absolute: every supplied PNG stays whole,
+       and the next divider simply sits in front of it. -->
+  <main class="storybook-stage" aria-label="Storybook Studio navigation">
+    <img class="stage-logo" src="logo.png" alt="Storybook Studio">
+
+    <!-- Sheet 1: behind Projects -->
+    <img class="paper paper-top-left" src="assets/paper-gray.png" alt="" aria-hidden="true">
+
+    <section class="folder folder-projects" aria-label="Projects">
+      <img class="folder-art" src="assets/divider-projects.png" alt="">
+      <button class="tab-button" type="button" aria-controls="panel-projects" aria-expanded="false" aria-label="Open Projects"></button>
+    </section>
+
+    <!-- Sheet 2: physically BETWEEN Projects and Contact -->
+    <img class="paper paper-top-right" src="assets/paper-white-a.png" alt="" aria-hidden="true">
+
+    <section class="folder folder-contact" aria-label="Contact">
+      <img class="folder-art" src="assets/divider-contact.png" alt="">
+      <button class="tab-button" type="button" aria-controls="panel-contact" aria-expanded="false" aria-label="Open Contact"></button>
+    </section>
+
+    <img class="paper paper-black" src="assets/paper-black.png" alt="" aria-hidden="true">
+
+    <section class="folder folder-about" aria-label="About">
+      <img class="folder-art" src="assets/divider-about.png" alt="">
+      <button class="tab-button" type="button" aria-controls="panel-about" aria-expanded="false" aria-label="Open About"></button>
+    </section>
+
+    <!-- Sheet 4: between About and Services -->
+    <img class="paper paper-bottom-right" src="assets/paper-white-c.png" alt="" aria-hidden="true">
+
+    <section class="folder folder-services" aria-label="Services">
+      <img class="folder-art" src="assets/divider-services.png" alt="">
+      <button class="tab-button" type="button" aria-controls="panel-services" aria-expanded="false" aria-label="Open Services"></button>
+    </section>
+
+    <!-- Sheet 5: duplicate of the FIRST LEFT sheet, now BETWEEN Services and Process -->
+    <img class="paper paper-bottom-left" src="assets/paper-gray.png" alt="" aria-hidden="true">
+
+    <section class="folder folder-process" aria-label="Process">
+      <img class="folder-art" src="assets/divider-process.png" alt="">
+      <button class="tab-button" type="button" aria-controls="panel-process" aria-expanded="false" aria-label="Open Process"></button>
+    </section>
+  </main>
+
+  <div class="drawer-shell" id="drawer-shell">
+    <section class="panel" id="panel-projects" hidden>
+      <div class="panel-content">
+        <p class="eyebrow">Selected work</p>
+        <div class="case-grid">
+          <article class="paper-card"><h3>Client name — project type</h3><p>One line on what changed: the before, the after, the shift in how they were understood.</p><span class="tag">Positioning</span></article>
+          <article class="paper-card"><h3>Client name — project type</h3><p>One line on what changed: the before, the after, the shift in how they were understood.</p><span class="tag">Brand voice</span></article>
+          <article class="paper-card"><h3>Client name — project type</h3><p>One line on what changed: the before, the after, the shift in how they were understood.</p><span class="tag">Launch</span></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-contact" hidden>
+      <div class="panel-content">
+        <div class="paper-card">
+          <h3>Start a chapter</h3>
+          <p>Tell me a little about what you're building — I read every message myself.</p>
+          <form class="contact-form" id="contact-form">
+            <div class="field"><label for="f-name">Name</label><input id="f-name" name="name" type="text" autocomplete="name" required></div>
+            <div class="field"><label for="f-email">Email</label><input id="f-email" name="email" type="email" autocomplete="email" required></div>
+            <div class="field"><label for="f-message">Message</label><textarea id="f-message" name="message" rows="4" required></textarea></div>
+            <button type="submit" class="send-btn">Send</button>
+          </form>
+          <p class="contact-alt">Or write straight to <a href="mailto:chapter@storybookstudio.com">chapter@storybookstudio.com</a></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-about" hidden>
+      <div class="panel-content">
+        <div class="paper-card"><h3>About Miren</h3><p class="lede">I translate between what people make and how the world understands it.</p><p>Storybook Studio is run by Miren Arregui, who spent six years building other people's marketing before leaving to build her own practice.</p><p>She works with founders doing complex, personal, hard-to-summarize work — the kind that gets lost in translation between what someone makes and how the world is supposed to understand it.</p></div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-services" hidden>
+      <div class="panel-content">
+        <p class="eyebrow">How we might work together</p>
+        <div class="service-list">
+          <article class="paper-card"><h3><span class="num">01</span> Positioning</h3><p>Finding the true, specific version of what you do — and the language that makes it land.</p></article>
+          <article class="paper-card"><h3><span class="num">02</span> Voice &amp; messaging</h3><p>Turning positioning into words you'll actually use — on the site, in the deck, in the DM.</p></article>
+          <article class="paper-card"><h3><span class="num">03</span> Communication guidelines</h3><p>A living reference so the story stays consistent after the project ends.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-process" hidden>
+      <div class="panel-content">
+        <div class="chapter-list">
+          <article class="paper-card chapter-item"><span class="chapter-mark">I.</span><div><h3>We talk</h3><p>An honest conversation about what you make and who keeps misunderstanding it.</p></div></article>
+          <article class="paper-card chapter-item"><span class="chapter-mark">II.</span><div><h3>I translate</h3><p>Your story, restructured into positioning that holds up under pressure.</p></div></article>
+          <article class="paper-card chapter-item"><span class="chapter-mark">III.</span><div><h3>You get the pages</h3><p>Guidelines and messaging you can hand to anyone and trust they'll get it right.</p></div></article>
+          <article class="paper-card chapter-item"><span class="chapter-mark">IV.</span><div><h3>The story keeps going</h3><p>Check-ins as things grow, so the narrative never falls out of date.</p></div></article>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="site-footer">© Storybook Studio</footer>
+  <script src="script.js"></script>
+</body>
+</html>
