@@ -26,8 +26,7 @@
   z-index: 2;
   perspective: var(--scene-perspective, 1200px);
   perspective-origin: 50% 52%;
-  opacity: 0;
-  transition: opacity 0.25s linear;
+  opacity: 1;
 }
 
 .stack-stage.is-ready { opacity: 1; }
@@ -133,5 +132,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stack-stage { transition: none; }
+  .stack-stage { opacity: 1; }
 }
