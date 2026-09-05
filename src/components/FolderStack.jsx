@@ -348,11 +348,11 @@ export default function FolderStack() {
       // so each paper is already almost back in its resting depth before it
       // becomes visible, instead of fading in while still crossing other
       // papers' depth (which is what reads as "popping in front too early").
-      // Same rule as opening, in reverse: only the folders that are in front
-      // of the one that was open ever moved away, so only those need to
-      // return. Anything behind it was untouched this whole time.
+      // Same reasoning as opening, in reverse: every other section moved away
+      // during open (the selected sheet's z swept from 0 back up through all
+      // of them), so every other section needs to come back now.
       SECTIONS.forEach((_, index) => {
-        if (index <= from) return;
+        if (index === from) return;
         const m = measurements[index];
         const fadeStart = returnStart + returnDuration * 0.45;
         const fadeDuration = returnDuration * 0.55;
@@ -464,16 +464,14 @@ export default function FolderStack() {
         ease: EASE.standard,
       }, zoomStart);
 
-      // Only the folders literally stacked IN FRONT of the one being opened
-      // (higher index = higher z = closer to camera) need to get out of the
-      // way. Anything behind it never needs to move — it's already hidden and
-      // the growing fullscreen paper covers it regardless — and animating it
-      // anyway was both extra jank AND, for the selected divider specifically,
-      // a second tween fighting the reveal-drop tween above for the same y/z
-      // during their overlap (that fight is what was still popping/stuttering).
+      // Every OTHER section moves out of the way — the selected sheet's own z
+      // drops all the way down to 0 as it grows, passing through the z of
+      // every section behind it too, so anything left in place (in front OR
+      // behind) would flash in front of the growing paper for part of the
+      // animation. The selected divider is excluded here (it already has its
+      // own reveal-drop tween above) so the two don't fight over the same y/z.
       SECTIONS.forEach((_, index) => {
-        if (index <= to) return;
-        const d = dividerRefs.current[index];
+        const d = index === to ? null : dividerRefs.current[index];
         const s = sheetRefs.current[index];
         if (d) {
           tl.to(d, {
@@ -485,7 +483,7 @@ export default function FolderStack() {
             force3D: true,
           }, zoomStart);
         }
-        if (s) {
+        if (s && index !== to) {
           tl.to(s, {
             y: measurements[index].sheet.y + viewport.height * 0.72,
             z: measurements[index].sheet.z - 220,
