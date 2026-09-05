@@ -24,8 +24,11 @@ export const SECTIONS = [
     sheetRatio: 800 / 909,
     sheetWidthRatio: 0.424,
     sheetXRatio: -0.221,
-    sheetTopRatio: 0.222,
-    sheetHitClip: 'polygon(0% 7.8%, 89.5% 0%, 100% 92.1%, 10.4% 100%)',
+    // Slightly lower so the final sheet behind Projects is more visible.
+    sheetTopRatio: 0.247,
+    // Projects is the farthest/last loose sheet. Give its whole image box a
+    // click target so every visible part reliably opens Projects.
+    sheetHitClip: 'none',
   },
   {
     id: 'contact',
