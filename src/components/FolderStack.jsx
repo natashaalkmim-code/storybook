@@ -348,8 +348,11 @@ export default function FolderStack() {
       // so each paper is already almost back in its resting depth before it
       // becomes visible, instead of fading in while still crossing other
       // papers' depth (which is what reads as "popping in front too early").
+      // Same rule as opening, in reverse: only the folders that are in front
+      // of the one that was open ever moved away, so only those need to
+      // return. Anything behind it was untouched this whole time.
       SECTIONS.forEach((_, index) => {
-        if (index === from) return;
+        if (index <= from) return;
         const m = measurements[index];
         const fadeStart = returnStart + returnDuration * 0.45;
         const fadeDuration = returnDuration * 0.55;
@@ -461,20 +464,28 @@ export default function FolderStack() {
         ease: EASE.standard,
       }, zoomStart);
 
+      // Only the folders literally stacked IN FRONT of the one being opened
+      // (higher index = higher z = closer to camera) need to get out of the
+      // way. Anything behind it never needs to move — it's already hidden and
+      // the growing fullscreen paper covers it regardless — and animating it
+      // anyway was both extra jank AND, for the selected divider specifically,
+      // a second tween fighting the reveal-drop tween above for the same y/z
+      // during their overlap (that fight is what was still popping/stuttering).
       SECTIONS.forEach((_, index) => {
+        if (index <= to) return;
         const d = dividerRefs.current[index];
         const s = sheetRefs.current[index];
         if (d) {
           tl.to(d, {
             y: measurements[index].divider.y + viewport.height * 0.72,
             z: measurements[index].divider.z - 220,
-            opacity: index === to ? 0.18 : 0,
+            opacity: 0,
             duration: t(TIMING.open * 0.9),
             ease: EASE.standard,
             force3D: true,
           }, zoomStart);
         }
-        if (s && index !== to) {
+        if (s) {
           tl.to(s, {
             y: measurements[index].sheet.y + viewport.height * 0.72,
             z: measurements[index].sheet.z - 220,
