@@ -101,6 +101,8 @@ export default function FolderStack() {
           yPercent: -50,
           opacity: 1,
           borderRadius: 0,
+          scaleX: 1,
+          scaleY: 1,
           duration,
           ease: EASE.standard,
         });
@@ -268,7 +270,7 @@ export default function FolderStack() {
         if (!el || index === activeIndex) return;
         gsap.set(el, { y: `+=${viewport.height * 0.72}`, z: '-=220', opacity: 0 });
       });
-      if (selected) gsap.set(selected, { x: 0, y: 0, z: 0, width: viewport.width + 2, height: viewport.height + 2, xPercent: -50, yPercent: -50, opacity: 1 });
+      if (selected) gsap.set(selected, { x: 0, y: 0, z: 0, width: viewport.width + 2, height: viewport.height + 2, xPercent: -50, yPercent: -50, opacity: 1, scaleX: 1, scaleY: 1 });
       if (image) gsap.set(image, { opacity: 0 });
       if (surface) gsap.set(surface, { opacity: 1 });
       if (content) gsap.set(content, { opacity: 1, y: 0, pointerEvents: 'auto' });
@@ -341,29 +343,45 @@ export default function FolderStack() {
         .to(stackRef.current, { rotationX: config.rotateX, duration: returnDuration, ease: EASE.standard }, returnStart);
 
       // Everything that was already behind its own divider keeps its existing
-      // interleaved depth relationship while returning.
+      // interleaved depth relationship while returning. Position/depth moves
+      // for the FULL duration, but opacity only ramps in during the tail end —
+      // so each paper is already almost back in its resting depth before it
+      // becomes visible, instead of fading in while still crossing other
+      // papers' depth (which is what reads as "popping in front too early").
       SECTIONS.forEach((_, index) => {
         if (index === from) return;
         const m = measurements[index];
+        const fadeStart = returnStart + returnDuration * 0.45;
+        const fadeDuration = returnDuration * 0.55;
+
         tl.to(dividerRefs.current[index], {
           ...m.divider,
           xPercent: -50,
           yPercent: -50,
-          opacity: 1,
           duration: returnDuration,
           ease: EASE.standard,
           force3D: true,
         }, returnStart);
+        tl.to(dividerRefs.current[index], {
+          opacity: 1,
+          duration: fadeDuration,
+          ease: EASE.enter,
+        }, fadeStart);
+
         tl.to(sheetRefs.current[index], {
           ...m.sheet,
           xPercent: -50,
           yPercent: -50,
-          opacity: 1,
           borderRadius: 0,
           duration: returnDuration,
           ease: EASE.standard,
           force3D: true,
         }, returnStart);
+        tl.to(sheetRefs.current[index], {
+          opacity: 1,
+          duration: fadeDuration,
+          ease: EASE.enter,
+        }, fadeStart);
       });
 
       // Return the selected pair together. The divider starts 28 depth units in
@@ -379,10 +397,23 @@ export default function FolderStack() {
         force3D: true,
       }, returnStart);
 
+      // The open paper's actual box stays frozen at full-viewport size for the
+      // whole shrink — only x/y/z and scale animate (compositor-only, no
+      // layout recalculation on every frame). xPercent/yPercent -50 keeps the
+      // box self-centered regardless of its frozen width, so the shrink still
+      // lands on the exact art-directed closed position and size. The real
+      // width/height only snap back down in the setRestState() call right
+      // after this timeline finishes.
+      const closeFullWidth = viewport.width + 2;
+      const closeFullHeight = viewport.height + 2;
       tl.to(selectedSheet, {
-        ...selectedMeasurement.sheet,
+        x: selectedMeasurement.sheet.x,
+        y: selectedMeasurement.sheet.y,
+        z: selectedMeasurement.sheet.z,
         xPercent: -50,
         yPercent: -50,
+        scaleX: selectedMeasurement.sheet.width / closeFullWidth,
+        scaleY: selectedMeasurement.sheet.height / closeFullHeight,
         opacity: 1,
         borderRadius: 0,
         duration: returnDuration,
@@ -455,12 +486,26 @@ export default function FolderStack() {
         }
       });
 
+      // Freeze the real box at its final full-viewport size ONCE (a single
+      // layout pass instead of one every frame), and instantly compensate
+      // with a matching down-scale so nothing visibly jumps. The animated
+      // tween then only touches x/y/z/scale — compositor-only properties —
+      // so the zoom stays smooth instead of forcing layout on every tick.
+      const openFullWidth = viewport.width + 2;
+      const openFullHeight = viewport.height + 2;
+      tl.set(selectedSheet, {
+        width: openFullWidth,
+        height: openFullHeight,
+        scaleX: selectedMeasurement.sheet.width / openFullWidth,
+        scaleY: selectedMeasurement.sheet.height / openFullHeight,
+      }, zoomStart);
+
       tl.to(selectedSheet, {
         x: 0,
         y: 0,
         z: 0,
-        width: viewport.width + 2,
-        height: viewport.height + 2,
+        scaleX: 1,
+        scaleY: 1,
         opacity: 1,
         duration: t(TIMING.open),
         ease: EASE.standard,
