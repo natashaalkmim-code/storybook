@@ -34,6 +34,18 @@ function useViewport() {
   return viewport;
 }
 
+const SHEET_LAYER_BASE = 20;
+const OVERLAY_SHEET_LAYER = 1000;
+const OVERLAY_DIVIDER_LAYER = 1001;
+
+function sheetLayer(index) {
+  return SHEET_LAYER_BASE + index * 2;
+}
+
+function dividerLayer(index) {
+  return SHEET_LAYER_BASE + index * 2 + 1;
+}
+
 export default function FolderStack() {
   const navigate = useNavigate();
   const { sectionId } = useParams();
@@ -52,6 +64,7 @@ export default function FolderStack() {
   const timelineRef = useRef(null);
   const previousActiveRef = useRef(activeIndex);
   const mountedRef = useRef(false);
+  const introPlayedRef = useRef(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const measurements = useMemo(
@@ -59,59 +72,111 @@ export default function FolderStack() {
     [viewport, config]
   );
 
-  const setRestState = useCallback((animate = false) => {
-    const duration = animate ? TIMING.close : 0;
-    const method = animate ? gsap.to : gsap.set;
+  const setPairRest = useCallback((index) => {
+    const d = dividerRefs.current[index];
+    const s = sheetRefs.current[index];
+    const image = sheetImageRefs.current[index];
+    const surface = surfaceRefs.current[index];
+    const content = contentRefs.current[index];
+    const m = measurements[index];
 
+    if (d) {
+      gsap.set(d, {
+        ...m.divider,
+        z: 0,
+        zIndex: dividerLayer(index),
+        xPercent: -50,
+        yPercent: -50,
+        opacity: 1,
+        scale: 1,
+        force3D: false,
+      });
+    }
+
+    if (s) {
+      gsap.set(s, {
+        ...m.sheet,
+        z: 0,
+        zIndex: sheetLayer(index),
+        xPercent: -50,
+        yPercent: -50,
+        opacity: 1,
+        borderRadius: 0,
+        scaleX: 1,
+        scaleY: 1,
+        force3D: false,
+      });
+    }
+
+    if (image) gsap.set(image, { opacity: 1 });
+    if (surface) gsap.set(surface, { opacity: 0 });
+    if (content) gsap.set(content, { opacity: 0, y: 16, pointerEvents: 'none' });
+  }, [measurements]);
+
+  const setRestState = useCallback(() => {
     if (stackRef.current) {
-      method(stackRef.current, {
-        rotationX: config.rotateX,
+      gsap.set(stackRef.current, {
+        rotationX: 0,
         rotationY: 0,
         x: 0,
         y: 0,
         z: 0,
-        duration,
-        ease: EASE.standard,
+        force3D: false,
+      });
+    }
+    SECTIONS.forEach((_, index) => setPairRest(index));
+  }, [setPairRest]);
+
+  const setNonSelectedRest = useCallback((selectedIndex) => {
+    SECTIONS.forEach((_, index) => {
+      if (index !== selectedIndex) setPairRest(index);
+    });
+  }, [setPairRest]);
+
+  const setOpenState = useCallback((index) => {
+    setRestState();
+
+    const selected = sheetRefs.current[index];
+    const divider = dividerRefs.current[index];
+    const image = sheetImageRefs.current[index];
+    const surface = surfaceRefs.current[index];
+    const content = contentRefs.current[index];
+    const m = measurements[index];
+
+    if (selected) {
+      gsap.set(selected, {
+        x: 0,
+        y: 0,
+        z: 0,
+        width: viewport.width + 2,
+        height: viewport.height + 2,
+        xPercent: -50,
+        yPercent: -50,
+        scaleX: 1,
+        scaleY: 1,
+        opacity: 1,
+        zIndex: OVERLAY_SHEET_LAYER,
+        force3D: false,
       });
     }
 
-    SECTIONS.forEach((_, index) => {
-      const d = dividerRefs.current[index];
-      const s = sheetRefs.current[index];
-      const image = sheetImageRefs.current[index];
-      const surface = surfaceRefs.current[index];
-      const content = contentRefs.current[index];
-      const m = measurements[index];
+    if (divider) {
+      gsap.set(divider, {
+        ...m.divider,
+        y: m.divider.y + viewport.height * 0.9,
+        z: 0,
+        zIndex: OVERLAY_DIVIDER_LAYER,
+        xPercent: -50,
+        yPercent: -50,
+        opacity: 0,
+        force3D: false,
+      });
+    }
 
-      if (d) {
-        method(d, {
-          ...m.divider,
-          xPercent: -50,
-          yPercent: -50,
-          opacity: 1,
-          duration,
-          ease: EASE.standard,
-        });
-      }
-
-      if (s) {
-        method(s, {
-          ...m.sheet,
-          xPercent: -50,
-          yPercent: -50,
-          opacity: 1,
-          borderRadius: 0,
-          scaleX: 1,
-          scaleY: 1,
-          duration,
-          ease: EASE.standard,
-        });
-      }
-      if (image) method(image, { opacity: 1, duration: duration * 0.65, ease: EASE.exit });
-      if (surface) method(surface, { opacity: 0, duration: duration * 0.65, ease: EASE.exit });
-      if (content) method(content, { opacity: 0, y: 16, pointerEvents: 'none', duration: duration * 0.45 });
-    });
-  }, [config, measurements]);
+    if (image) gsap.set(image, { opacity: 0 });
+    if (surface) gsap.set(surface, { opacity: 1 });
+    if (content) gsap.set(content, { opacity: 1, y: 0, pointerEvents: 'auto' });
+  }, [measurements, setRestState, viewport.height, viewport.width]);
 
   useLayoutEffect(() => {
     if (timelineRef.current) timelineRef.current.kill();
@@ -119,173 +184,134 @@ export default function FolderStack() {
     const isFirstMount = !mountedRef.current;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // Always calculate the exact final geometry first. On the first homepage
-    // visit we then hide the individual planes before the browser paints and
-    // reveal them in the requested back-to-front order.
-    if (activeIndex < 0) {
-      setRestState(false);
-
-      if (isFirstMount && !reduceMotion) {
-        const revealOrder = SECTIONS.map((_, index) => index).reverse();
-
-        // Put every plane at its FINAL depth before it becomes visible.
-        // Especially for the loose papers, animating through Z while a large
-        // transparent PNG is being composited can look slightly stepped. The
-        // intro therefore keeps the correct interleaved depth from frame one
-        // and uses only a tiny Y/scale settle.
-        revealOrder.forEach((index) => {
-          const divider = dividerRefs.current[index];
-          const sheet = sheetRefs.current[index];
-          const m = measurements[index];
-
-          if (divider) {
-            gsap.set(divider, {
-              ...m.divider,
-              xPercent: -50,
-              yPercent: -50,
-              y: m.divider.y - 18,
-              z: m.divider.z,
-              scale: 0.994,
-              autoAlpha: 0,
-              force3D: true,
-            });
-          }
-
-          if (sheet) {
-            gsap.set(sheet, {
-              ...m.sheet,
-              xPercent: -50,
-              yPercent: -50,
-              y: m.sheet.y - 10,
-              z: m.sheet.z,
-              scale: 0.997,
-              autoAlpha: 0,
-              force3D: true,
-            });
-          }
-        });
-
-        mountedRef.current = true;
-        if (stageRef.current) stageRef.current.classList.add('is-ready');
-
-        let cancelled = false;
-        let intro = null;
-
-        const startIntro = () => {
-          if (cancelled) return;
-
-          const dividerDuration = 0.72;
-          const dividerStep = 0.15;
-          const sheetDuration = 0.88;
-          const sheetStep = 0.12;
-          let cursor = 0;
-
-          intro = gsap.timeline({
-            onStart: () => setIsAnimating(true),
-            onComplete: () => {
-              // Restore the exact art-directed coordinates after the intro so
-              // the animated and non-animated homepage are pixel-identical.
-              setRestState(false);
-              dividerRefs.current.forEach((el) => el && gsap.set(el, { scale: 1, clearProps: 'visibility' }));
-              sheetRefs.current.forEach((el) => el && gsap.set(el, { scale: 1, clearProps: 'visibility' }));
-              setIsAnimating(false);
-              timelineRef.current = null;
-            },
-          });
-          timelineRef.current = intro;
-
-          // Process → Services → About → Contact → Projects.
-          revealOrder.forEach((index) => {
-            const m = measurements[index];
-            intro.to(
-              dividerRefs.current[index],
-              {
-                y: m.divider.y,
-                scale: 1,
-                autoAlpha: 1,
-                duration: dividerDuration,
-                ease: 'sine.out',
-                force3D: true,
-              },
-              cursor
-            );
-            cursor += dividerStep;
-          });
-
-          // The papers follow bottom-to-top. They are already at the correct Z
-          // (behind their own divider) and simply finish settling vertically.
-          // Longer overlap + sine easing removes the stop/start feeling.
-          cursor += 0.02;
-          revealOrder.forEach((index) => {
-            const m = measurements[index];
-            intro.to(
-              sheetRefs.current[index],
-              {
-                y: m.sheet.y,
-                scale: 1,
-                autoAlpha: 1,
-                duration: sheetDuration,
-                ease: 'sine.out',
-                force3D: true,
-              },
-              cursor
-            );
-            cursor += sheetStep;
-          });
-        };
-
-        // Decode the supplied PNGs before moving them. This prevents the first
-        // animation frames from stuttering while the browser rasterizes a large
-        // transparent paper/folder image for the first time.
-        const images = [
-          ...dividerRefs.current.map((el) => el?.querySelector('img')),
-          ...sheetImageRefs.current,
-        ].filter(Boolean);
-
-        const decodeJobs = images.map((img) => {
-          if (typeof img.decode !== 'function') return Promise.resolve();
-          return img.decode().catch(() => undefined);
-        });
-
-        Promise.allSettled(decodeJobs).then(() => {
-          requestAnimationFrame(startIntro);
-        });
-
-        return () => {
-          cancelled = true;
-          if (intro) intro.kill();
-        };
-      }
-    } else {
-      // A deep-linked open page is shown directly rather than replaying the
-      // homepage intro first.
-      setRestState(false);
-      const selected = sheetRefs.current[activeIndex];
-      const image = sheetImageRefs.current[activeIndex];
-      const surface = surfaceRefs.current[activeIndex];
-      const content = contentRefs.current[activeIndex];
-      if (stackRef.current) gsap.set(stackRef.current, { rotationX: 0 });
-      dividerRefs.current.forEach((el) => el && gsap.set(el, { y: `+=${viewport.height * 0.72}`, z: '-=220', opacity: 0 }));
-      sheetRefs.current.forEach((el, index) => {
-        if (!el || index === activeIndex) return;
-        gsap.set(el, { y: `+=${viewport.height * 0.72}`, z: '-=220', opacity: 0 });
-      });
-      if (selected) gsap.set(selected, { x: 0, y: 0, z: 0, width: viewport.width + 2, height: viewport.height + 2, xPercent: -50, yPercent: -50, opacity: 1, scaleX: 1, scaleY: 1 });
-      if (image) gsap.set(image, { opacity: 0 });
-      if (surface) gsap.set(surface, { opacity: 1 });
-      if (content) gsap.set(content, { opacity: 1, y: 0, pointerEvents: 'auto' });
+    if (activeIndex >= 0) {
+      setOpenState(activeIndex);
+      mountedRef.current = true;
+      stageRef.current?.classList.add('is-ready');
+      return undefined;
     }
+
+    setRestState();
+
+    if (!introPlayedRef.current && !reduceMotion) {
+      // The artwork is deliberately flattened into integer CSS layers. Each
+      // sheet is always one layer behind its own divider, so the intro cannot
+      // generate 3D crossover flashes while the PNGs are being composited.
+      const revealOrder = SECTIONS.map((_, index) => index).reverse();
+
+      revealOrder.forEach((index) => {
+        const d = dividerRefs.current[index];
+        const s = sheetRefs.current[index];
+        const m = measurements[index];
+
+        if (d) {
+          gsap.set(d, {
+            y: m.divider.y - 20,
+            opacity: 0,
+            scale: 0.988,
+            zIndex: dividerLayer(index),
+            force3D: false,
+          });
+        }
+        if (s) {
+          gsap.set(s, {
+            y: m.sheet.y - 13,
+            opacity: 0,
+            scaleX: 0.992,
+            scaleY: 0.992,
+            zIndex: sheetLayer(index),
+            force3D: false,
+          });
+        }
+      });
+
+      mountedRef.current = true;
+      stageRef.current?.classList.add('is-ready');
+
+      let cancelled = false;
+      let intro = null;
+
+      const startIntro = () => {
+        if (cancelled) return;
+        introPlayedRef.current = true;
+
+        intro = gsap.timeline({
+          onStart: () => setIsAnimating(true),
+          onComplete: () => {
+            setRestState();
+            setIsAnimating(false);
+            timelineRef.current = null;
+          },
+        });
+        timelineRef.current = intro;
+
+        revealOrder.forEach((index, orderIndex) => {
+          const m = measurements[index];
+          const start = orderIndex * 0.13;
+
+          // Each section arrives as one layer: divider first, loose paper a few
+          // frames later, then both make a tiny final settle instead of stopping
+          // abruptly. This gives the “terminando de assentar” feeling.
+          intro.to(dividerRefs.current[index], {
+            y: m.divider.y + 3,
+            opacity: 1,
+            scale: 1,
+            duration: 0.58,
+            ease: 'power3.out',
+            force3D: false,
+          }, start);
+          intro.to(dividerRefs.current[index], {
+            y: m.divider.y,
+            duration: 0.2,
+            ease: 'sine.inOut',
+            force3D: false,
+          }, start + 0.5);
+
+          intro.to(sheetRefs.current[index], {
+            y: m.sheet.y + 2,
+            opacity: 1,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 0.66,
+            ease: 'power3.out',
+            force3D: false,
+          }, start + 0.055);
+          intro.to(sheetRefs.current[index], {
+            y: m.sheet.y,
+            duration: 0.22,
+            ease: 'sine.inOut',
+            force3D: false,
+          }, start + 0.57);
+        });
+      };
+
+      const images = [
+        ...dividerRefs.current.map((el) => el?.querySelector('img')),
+        ...sheetImageRefs.current,
+      ].filter(Boolean);
+
+      Promise.allSettled(images.map((img) => (
+        typeof img.decode === 'function' ? img.decode().catch(() => undefined) : Promise.resolve()
+      ))).then(() => requestAnimationFrame(startIntro));
+
+      return () => {
+        cancelled = true;
+        intro?.kill();
+      };
+    }
+
+    if (reduceMotion) introPlayedRef.current = true;
 
     if (isFirstMount) {
       mountedRef.current = true;
-      if (stageRef.current) stageRef.current.classList.add('is-ready');
+      stageRef.current?.classList.add('is-ready');
     }
-  // Deliberately NOT dependent on activeIndex. Route changes are animated by
-  // the effect below. This layout effect only handles first paint and real
-  // viewport/config changes, preventing navigation from snapping directly to
-  // the final state before GSAP gets a chance to animate it.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport.width, viewport.height, config, setRestState]);
+
+    return undefined;
+    // Route changes are handled by the animation effect below. This layout
+    // effect is for first paint and real viewport/config changes only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewport.width, viewport.height, config, setRestState, setOpenState]);
 
   useEffect(() => {
     const from = previousActiveRef.current;
@@ -293,7 +319,7 @@ export default function FolderStack() {
     previousActiveRef.current = to;
 
     if (!mountedRef.current || from === to) return undefined;
-    if (timelineRef.current) timelineRef.current.kill();
+    timelineRef.current?.kill();
 
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const speed = reduce ? 0.08 : 1;
@@ -316,118 +342,75 @@ export default function FolderStack() {
       const content = contentRefs.current[from];
       const selectedDivider = dividerRefs.current[from];
       const selectedSheet = sheetRefs.current[from];
-      const selectedMeasurement = measurements[from];
-      const returnStart = t(0.08);
-      const returnDuration = t(TIMING.close);
+      const m = measurements[from];
 
-      // The open paper is at z: 0. Before it starts travelling back, place its
-      // OWN divider clearly in front of it. Then animate the divider and paper
-      // with the exact same duration/ease. Because the depth gap is positive at
-      // BOTH endpoints, the paper can never flash in front of its divider on
-      // the way home.
-      if (selectedDivider && selectedSheet) {
-        const closeFrontGap = 28;
-        gsap.set(selectedDivider, {
-          z: Math.max(
-            selectedMeasurement.divider.z + closeFrontGap,
-            closeFrontGap
-          ),
-          opacity: 1,
-          force3D: true,
-        });
-      }
+      const fullWidth = viewport.width + 2;
+      const fullHeight = viewport.height + 2;
+      const dividerDrop = Math.min(190, viewport.height * 0.2);
+      const dividerEntryY = m.divider.y + Math.max(dividerDrop, viewport.height * 0.42);
+      const returnStart = t(0.2);
+      const returnDuration = t(0.84);
 
-      tl.to(content, { opacity: 0, y: 12, duration: t(0.22), ease: EASE.exit }, 0)
-        .to(surface, { opacity: 0, duration: t(0.25), ease: EASE.exit }, t(0.04))
-        .to(image, { opacity: 1, duration: t(0.34), ease: 'sine.out' }, t(0.06))
-        .to(stackRef.current, { rotationX: config.rotateX, duration: returnDuration, ease: EASE.standard }, returnStart);
+      // All the other folders are already sitting in their exact homepage
+      // positions underneath the fullscreen paper. Nothing else “rebuilds” on
+      // close: only this divider and this sheet move.
+      setNonSelectedRest(from);
 
-      // Everything that was already behind its own divider keeps its existing
-      // interleaved depth relationship while returning. Position/depth moves
-      // for the FULL duration, but opacity only ramps in during the tail end —
-      // so each paper is already almost back in its resting depth before it
-      // becomes visible, instead of fading in while still crossing other
-      // papers' depth (which is what reads as "popping in front too early").
-      // Same reasoning as opening, in reverse: every other section moved away
-      // during open (the selected sheet's z swept from 0 back up through all
-      // of them), so every other section needs to come back now.
-      SECTIONS.forEach((_, index) => {
-        if (index === from) return;
-        const m = measurements[index];
-        const fadeStart = returnStart + returnDuration * 0.45;
-        const fadeDuration = returnDuration * 0.55;
-
-        tl.to(dividerRefs.current[index], {
-          ...m.divider,
-          xPercent: -50,
-          yPercent: -50,
-          duration: returnDuration,
-          ease: EASE.standard,
-          force3D: true,
-        }, returnStart);
-        tl.to(dividerRefs.current[index], {
-          opacity: 1,
-          duration: fadeDuration,
-          ease: EASE.enter,
-        }, fadeStart);
-
-        tl.to(sheetRefs.current[index], {
-          ...m.sheet,
-          xPercent: -50,
-          yPercent: -50,
-          borderRadius: 0,
-          duration: returnDuration,
-          ease: EASE.standard,
-          force3D: true,
-        }, returnStart);
-        tl.to(sheetRefs.current[index], {
-          opacity: 1,
-          duration: fadeDuration,
-          ease: EASE.enter,
-        }, fadeStart);
+      gsap.set(selectedSheet, {
+        zIndex: OVERLAY_SHEET_LAYER,
+        width: fullWidth,
+        height: fullHeight,
+        xPercent: -50,
+        yPercent: -50,
+        force3D: false,
+      });
+      gsap.set(selectedDivider, {
+        ...m.divider,
+        xPercent: -50,
+        yPercent: -50,
+        y: dividerEntryY,
+        z: 0,
+        zIndex: OVERLAY_DIVIDER_LAYER,
+        opacity: 0,
+        force3D: false,
       });
 
-      // Return the selected pair together. The divider starts 28 depth units in
-      // front and ends at its normal 0.5-unit lead over the paper, so there is
-      // no crossover frame at all.
-      tl.to(selectedDivider, {
-        ...selectedMeasurement.divider,
-        xPercent: -50,
-        yPercent: -50,
-        opacity: 1,
-        duration: returnDuration,
-        ease: EASE.standard,
-        force3D: true,
-      }, returnStart);
+      tl.set(content, { pointerEvents: 'none' }, 0)
+        .to(content, { opacity: 0, y: 10, duration: t(0.18), ease: EASE.exit }, 0)
+        .to(surface, { opacity: 0, duration: t(0.24), ease: EASE.exit }, t(0.02))
+        .to(image, { opacity: 1, duration: t(0.3), ease: 'sine.out' }, t(0.04))
+        .to(selectedDivider, {
+          y: m.divider.y + dividerDrop,
+          opacity: 1,
+          duration: t(0.34),
+          ease: 'power3.out',
+          force3D: false,
+        }, t(0.03))
+        .to(selectedSheet, {
+          x: m.sheet.x,
+          y: m.sheet.y,
+          z: 0,
+          scaleX: m.sheet.width / fullWidth,
+          scaleY: m.sheet.height / fullHeight,
+          opacity: 1,
+          duration: returnDuration,
+          ease: EASE.standard,
+          force3D: false,
+        }, returnStart)
+        .to(selectedDivider, {
+          y: m.divider.y,
+          opacity: 1,
+          duration: returnDuration,
+          ease: EASE.standard,
+          force3D: false,
+        }, returnStart)
+        .add(() => {
+          // The pair reaches its exact closed geometry before we restore its
+          // normal stacking level. The z-index swap therefore reveals the
+          // already-stationary front folders with no crossover animation.
+          setPairRest(from);
+        }, returnStart + returnDuration + t(0.01));
 
-      // The open paper's actual box stays frozen at full-viewport size for the
-      // whole shrink — only x/y/z and scale animate (compositor-only, no
-      // layout recalculation on every frame). xPercent/yPercent -50 keeps the
-      // box self-centered regardless of its frozen width, so the shrink still
-      // lands on the exact art-directed closed position and size. The real
-      // width/height only snap back down in the setRestState() call right
-      // after this timeline finishes.
-      const closeFullWidth = viewport.width + 2;
-      const closeFullHeight = viewport.height + 2;
-      tl.to(selectedSheet, {
-        x: selectedMeasurement.sheet.x,
-        y: selectedMeasurement.sheet.y,
-        z: selectedMeasurement.sheet.z,
-        xPercent: -50,
-        yPercent: -50,
-        scaleX: selectedMeasurement.sheet.width / closeFullWidth,
-        scaleY: selectedMeasurement.sheet.height / closeFullHeight,
-        opacity: 1,
-        borderRadius: 0,
-        duration: returnDuration,
-        ease: EASE.standard,
-        force3D: true,
-      }, returnStart);
-
-      // Force the exact art-directed homepage state after the reverse animation
-      // so repeated open/close cycles cannot accumulate transform drift.
-      tl.add(() => setRestState(false), returnStart + returnDuration + t(0.03));
-      tl.set(content, { pointerEvents: 'none' });
       return () => tl.kill();
     }
 
@@ -438,75 +421,64 @@ export default function FolderStack() {
       const selectedImage = sheetImageRefs.current[to];
       const selectedSurface = surfaceRefs.current[to];
       const selectedContent = contentRefs.current[to];
-      const selectedMeasurement = measurements[to];
+      const m = measurements[to];
 
-      // Give the folder opening a readable first beat: the divider in FRONT of
-      // the selected paper drops farther down, exposing much more of the paper
-      // and of the divider behind it. Only AFTER that settling movement does the
-      // paper begin its zoom toward the viewport.
-      const dividerRevealDrop = Math.min(180, viewport.height * 0.18);
-      const separationDuration = t(0.56);
-      const zoomStart = t(0.54);
+      const dividerDrop = Math.min(190, viewport.height * 0.2);
+      const separationDuration = t(0.52);
+      const frontExitStart = t(0.22);
+      const frontExitDuration = t(0.34);
+      const zoomStart = t(0.58);
+      const zoomDuration = t(0.86);
+      const fullWidth = viewport.width + 2;
+      const fullHeight = viewport.height + 2;
 
+      // First beat: lower the divider in front of the chosen paper. It stays
+      // above its own sheet for the entire transition.
       tl.to(selectedDivider, {
-        y: selectedMeasurement.divider.y + dividerRevealDrop,
-        z: selectedMeasurement.divider.z + 58,
+        y: m.divider.y + dividerDrop,
         duration: separationDuration,
         ease: 'power3.out',
-        force3D: true,
+        force3D: false,
       }, 0);
 
-      // Once the divider has almost finished lowering, the rest of the filing
-      // stack moves away and the loose paper becomes the reading surface.
-      tl.to(stackRef.current, {
-        rotationX: 0,
-        duration: t(TIMING.open),
-        ease: EASE.standard,
-      }, zoomStart);
-
-      // Every OTHER section moves out of the way — the selected sheet's own z
-      // drops all the way down to 0 as it grows, passing through the z of
-      // every section behind it too, so anything left in place (in front OR
-      // behind) would flash in front of the growing paper for part of the
-      // animation. The selected divider is excluded here (it already has its
-      // own reveal-drop tween above) so the two don't fight over the same y/z.
+      // Only layers physically in front of the selected section briefly clear
+      // the path. They use flat 2D motion + opacity; no element ever travels
+      // through another element's Z plane.
       SECTIONS.forEach((_, index) => {
-        const d = index === to ? null : dividerRefs.current[index];
-        const s = sheetRefs.current[index];
-        if (d) {
-          tl.to(d, {
-            y: measurements[index].divider.y + viewport.height * 0.72,
-            z: measurements[index].divider.z - 220,
-            opacity: 0,
-            duration: t(TIMING.open * 0.9),
-            ease: EASE.standard,
-            force3D: true,
-          }, zoomStart);
-        }
-        if (s && index !== to) {
-          tl.to(s, {
-            y: measurements[index].sheet.y + viewport.height * 0.72,
-            z: measurements[index].sheet.z - 220,
-            opacity: 0,
-            duration: t(TIMING.open * 0.9),
-            ease: EASE.standard,
-            force3D: true,
-          }, zoomStart);
-        }
+        if (index <= to) return;
+        const frontY = Math.min(54, viewport.height * 0.065);
+        tl.to(dividerRefs.current[index], {
+          y: measurements[index].divider.y + frontY,
+          opacity: 0,
+          duration: frontExitDuration,
+          ease: 'power2.inOut',
+          force3D: false,
+        }, frontExitStart);
+        tl.to(sheetRefs.current[index], {
+          y: measurements[index].sheet.y + frontY,
+          opacity: 0,
+          duration: frontExitDuration,
+          ease: 'power2.inOut',
+          force3D: false,
+        }, frontExitStart);
       });
 
-      // Freeze the real box at its final full-viewport size ONCE (a single
-      // layout pass instead of one every frame), and instantly compensate
-      // with a matching down-scale so nothing visibly jumps. The animated
-      // tween then only touches x/y/z/scale — compositor-only properties —
-      // so the zoom stays smooth instead of forcing layout on every tick.
-      const openFullWidth = viewport.width + 2;
-      const openFullHeight = viewport.height + 2;
+      // Once the front layers are practically gone, lift only the selected
+      // pair to a temporary overlay level. The divider remains exactly one
+      // layer above the paper, so the paper can never flash in front of it.
+      tl.set(selectedSheet, { zIndex: OVERLAY_SHEET_LAYER }, zoomStart);
+      tl.set(selectedDivider, { zIndex: OVERLAY_DIVIDER_LAYER }, zoomStart);
+
+      // Freeze the sheet box at fullscreen dimensions once, then animate only
+      // transforms. This avoids frame-by-frame layout work while zooming.
       tl.set(selectedSheet, {
-        width: openFullWidth,
-        height: openFullHeight,
-        scaleX: selectedMeasurement.sheet.width / openFullWidth,
-        scaleY: selectedMeasurement.sheet.height / openFullHeight,
+        width: fullWidth,
+        height: fullHeight,
+        scaleX: m.sheet.width / fullWidth,
+        scaleY: m.sheet.height / fullHeight,
+        xPercent: -50,
+        yPercent: -50,
+        force3D: false,
       }, zoomStart);
 
       tl.to(selectedSheet, {
@@ -516,33 +488,49 @@ export default function FolderStack() {
         scaleX: 1,
         scaleY: 1,
         opacity: 1,
-        duration: t(TIMING.open),
+        duration: zoomDuration,
         ease: EASE.standard,
-        force3D: true,
-      }, zoomStart)
-        .to(selectedImage, {
-          opacity: 0,
-          duration: t(TIMING.surface),
-          ease: EASE.exit,
-        }, zoomStart + t(0.38))
-        .to(selectedSurface, {
-          opacity: 1,
-          duration: t(TIMING.surface),
-          ease: EASE.enter,
-        }, zoomStart + t(0.36))
-        .set(selectedContent, { pointerEvents: 'auto' }, zoomStart + t(0.5))
-        .to(selectedContent, {
-          opacity: 1,
-          y: 0,
-          duration: t(TIMING.content),
-          ease: EASE.enter,
-        }, zoomStart + t(0.53));
+        force3D: false,
+      }, zoomStart);
+
+      // The divider keeps leading the paper while it exits downward. It never
+      // crosses behind the sheet; it simply leaves the viewport and fades.
+      tl.to(selectedDivider, {
+        y: m.divider.y + viewport.height * 0.82,
+        opacity: 0,
+        duration: t(0.7),
+        ease: 'power3.inOut',
+        force3D: false,
+      }, zoomStart + t(0.02));
+
+      tl.to(selectedImage, {
+        opacity: 0,
+        duration: t(TIMING.surface),
+        ease: EASE.exit,
+      }, zoomStart + t(0.36));
+      tl.to(selectedSurface, {
+        opacity: 1,
+        duration: t(TIMING.surface),
+        ease: EASE.enter,
+      }, zoomStart + t(0.34));
+      tl.set(selectedContent, { pointerEvents: 'auto' }, zoomStart + t(0.5));
+      tl.to(selectedContent, {
+        opacity: 1,
+        y: 0,
+        duration: t(TIMING.content),
+        ease: EASE.enter,
+      }, zoomStart + t(0.54));
+
+      // As soon as the fullscreen paper is opaque enough to hide the stack,
+      // silently put every other layer back at rest. This is why closing later
+      // does not have to make the folders “settle back in” one by one.
+      tl.add(() => setNonSelectedRest(to), zoomStart + zoomDuration + t(0.02));
 
       return () => tl.kill();
     }
 
     return () => tl.kill();
-  }, [activeIndex, config, measurements, viewport.height, viewport.width]);
+  }, [activeIndex, measurements, setNonSelectedRest, setPairRest, viewport.height, viewport.width]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -553,16 +541,16 @@ export default function FolderStack() {
   }, [activeId, isAnimating, navigate]);
 
   const hoverDivider = (index, entering) => {
-    if (activeId || isAnimating || config.hoverZ === 0) return;
+    if (activeId || isAnimating) return;
     const el = dividerRefs.current[index];
     if (!el) return;
     const m = measurements[index].divider;
     gsap.to(el, {
-      y: entering ? m.y + config.hoverY : m.y,
-      z: entering ? m.z + config.hoverZ : m.z,
+      y: entering ? m.y - 3 : m.y,
       duration: TIMING.hover,
       ease: EASE.enter,
       overwrite: true,
+      force3D: false,
     });
   };
 
