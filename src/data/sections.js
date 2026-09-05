@@ -51,13 +51,12 @@ export const SECTIONS = [
 
     // The reference composition has a dark textured paper here. Reuse the
     // supplied Storybook background texture instead of inventing a new asset.
-    sheetImage: '/assets/background/storybook-background.png',
-    sheetRatio: 4.45,
+    sheetImage: '/assets/sheets/sheet-dark.png',
+    sheetRatio: 1161 / 261,
     sheetWidthRatio: 0.67,
-    sheetXRatio: 0.15,
+    sheetXRatio: 0.13,
     sheetTopRatio: 0.492,
-    sheetFit: 'cover',
-    sheetObjectPosition: '50% 74%',
+    sheetFit: 'contain',
     sheetImageRotation: 4.7,
   },
   {
