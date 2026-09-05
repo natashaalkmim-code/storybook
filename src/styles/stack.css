@@ -86,6 +86,7 @@
 }
 
 .sheet-plane__asset,
+.sheet-plane__hit,
 .sheet-plane__surface,
 .sheet-plane__content {
   position: absolute;
@@ -98,6 +99,25 @@
   object-fit: contain;
   user-select: none;
   pointer-events: none;
+}
+
+/* In the closed composition the visible loose paper is navigation too.
+   This transparent button follows the same rotation as the paper artwork. */
+.sheet-plane__hit {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  transform-origin: 50% 50%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.sheet-plane__hit:disabled {
+  pointer-events: none;
+  cursor: default;
 }
 
 .sheet-plane__surface {
