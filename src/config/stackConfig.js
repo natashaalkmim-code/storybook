@@ -1,25 +1,24 @@
 /*
-  One geometry system controls the entire closed stack.
+  Closed-state geometry.
 
-  Crucially:
-  - every divider top is separated by exactly dividerYStep
-  - every divider depth is separated by exactly dividerZStep
-  - each sheet sits BEHIND its own divider, but INSIDE the fixed interval
-    between that divider and the divider directly behind it
-  - no section has hand-tuned translateY / translateZ values
+  The uploaded divider PNGs do not all have the same amount of transparent
+  space above their horizontal "shoulder" line. So spacing the raw image tops
+  evenly does NOT look evenly spaced.
+
+  Instead, every divider exposes a visual shoulder anchor (stored per section)
+  and those anchors are separated by one identical step. This keeps the visible
+  filing rhythm uniform while preserving the original PNGs untouched.
 */
 const DESKTOP = {
-  perspective: 1250,
-  rotateX: 55,
-  stackTopRatio: 0.39,
-  dividerWidthRatio: 1.12,
-  dividerWidthMax: 2100,
-  dividerYStep: 190,
-  dividerZStep: 70,
-  sheetBetweenRatio: 0.58,
-  sheetBehindZRatio: 0.2,
-  sheetWidthRatio: 0.34,
-  sheetWidthMax: 560,
+  perspective: 1200,
+  rotateX: 0,
+  stackAnchorTopRatio: 0.345,
+  dividerAnchorStepRatio: 0.118,
+  dividerWidthRatio: 1.01,
+  dividerWidthMax: 1700,
+  dividerZStep: 0,
+  sheetWidthRatio: 0.42,
+  sheetWidthMax: 700,
   tabHitWidthRatio: 0.24,
   tabHitHeightRatio: 0.085,
   hoverZ: 18,
@@ -27,17 +26,15 @@ const DESKTOP = {
 };
 
 const TABLET = {
-  perspective: 1050,
-  rotateX: 50,
-  stackTopRatio: 0.405,
-  dividerWidthRatio: 1.22,
-  dividerWidthMax: 1450,
-  dividerYStep: 145,
-  dividerZStep: 52,
-  sheetBetweenRatio: 0.58,
-  sheetBehindZRatio: 0.2,
-  sheetWidthRatio: 0.39,
-  sheetWidthMax: 440,
+  perspective: 1100,
+  rotateX: 0,
+  stackAnchorTopRatio: 0.345,
+  dividerAnchorStepRatio: 0.118,
+  dividerWidthRatio: 1.01,
+  dividerWidthMax: 1200,
+  dividerZStep: 0,
+  sheetWidthRatio: 0.42,
+  sheetWidthMax: 520,
   tabHitWidthRatio: 0.27,
   tabHitHeightRatio: 0.095,
   hoverZ: 12,
@@ -45,17 +42,15 @@ const TABLET = {
 };
 
 const MOBILE = {
-  perspective: 850,
-  rotateX: 35,
-  stackTopRatio: 0.48,
-  dividerWidthRatio: 1.42,
+  perspective: 950,
+  rotateX: 0,
+  stackAnchorTopRatio: 0.345,
+  dividerAnchorStepRatio: 0.118,
+  dividerWidthRatio: 1.01,
   dividerWidthMax: 900,
-  dividerYStep: 82,
-  dividerZStep: 34,
-  sheetBetweenRatio: 0.58,
-  sheetBehindZRatio: 0.2,
-  sheetWidthRatio: 0.52,
-  sheetWidthMax: 350,
+  dividerZStep: 0,
+  sheetWidthRatio: 0.42,
+  sheetWidthMax: 390,
   tabHitWidthRatio: 0.32,
   tabHitHeightRatio: 0.12,
   hoverZ: 0,
@@ -85,24 +80,36 @@ export function resolveStackConfig(width) {
 }
 
 export function measureScene(section, index, viewport, config) {
-  const dividerWidth = Math.min(viewport.width * config.dividerWidthRatio, config.dividerWidthMax);
+  const dividerWidth = Math.min(
+    viewport.width * config.dividerWidthRatio,
+    config.dividerWidthMax
+  );
   const dividerHeight = dividerWidth / section.dividerRatio;
 
-  // A divider's *top edge* follows one constant step. Its different source
-  // image height does not affect the spacing of the stack.
-  const dividerTop = viewport.height * config.stackTopRatio + index * config.dividerYStep;
+  // Equal spacing is based on the visible horizontal shoulder of each folder,
+  // not the raw top of its transparent PNG canvas.
+  const anchorTop = viewport.height * config.stackAnchorTopRatio;
+  const anchorStep = viewport.height * config.dividerAnchorStepRatio;
+  const dividerAnchorY = anchorTop + index * anchorStep;
+  const dividerTop = dividerAnchorY - dividerWidth * section.shoulderYRatio;
   const dividerY = dividerTop + dividerHeight / 2 - viewport.height / 2;
   const dividerZ = index * config.dividerZStep;
 
-  const sheetWidth = Math.min(viewport.width * config.sheetWidthRatio, config.sheetWidthMax);
+  // The loose-paper placement is intentionally art-directed per section to
+  // match the supplied composition, while remaining responsive through ratios.
+  const sheetWidthRatio = section.sheetWidthRatio ?? config.sheetWidthRatio;
+  const sheetWidth = Math.min(
+    viewport.width * sheetWidthRatio,
+    section.sheetWidthMax ?? config.sheetWidthMax
+  );
   const sheetHeight = sheetWidth / section.sheetRatio;
-
-  // For index > 0 this lands the sheet between the previous divider and this
-  // divider. It is slightly farther from the camera than its own divider, so
-  // the folder genuinely sits in front of its paper.
-  const sheetTop = dividerTop - config.dividerYStep * config.sheetBetweenRatio;
+  const sheetTop = viewport.height * section.sheetTopRatio;
+  const sheetX = viewport.width * (section.sheetXRatio ?? 0);
   const sheetY = sheetTop + sheetHeight / 2 - viewport.height / 2;
-  const sheetZ = dividerZ - config.dividerZStep * config.sheetBehindZRatio;
+
+  // Closed-state depth is intentionally almost frontal, matching the supplied
+  // mockup. The 3D separation happens during hover/open transitions.
+  const sheetZ = dividerZ - (section.sheetDepthOffset ?? 0.5);
 
   return {
     divider: {
@@ -116,7 +123,7 @@ export function measureScene(section, index, viewport, config) {
     sheet: {
       width: sheetWidth,
       height: sheetHeight,
-      x: 0,
+      x: sheetX,
       y: sheetY,
       z: sheetZ,
       rotationZ: 0,
