@@ -114,13 +114,66 @@ export default function FolderStack() {
   useLayoutEffect(() => {
     if (timelineRef.current) timelineRef.current.kill();
 
-    // Resize/breakpoint changes should never accumulate transforms. We always
-    // recalculate from the uploaded image ratios and the global stack steps.
+    const isFirstMount = !mountedRef.current;
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Always calculate the exact final geometry first. On the first homepage
+    // visit we then hide the individual planes before the browser paints and
+    // reveal them in the requested back-to-front order.
     if (activeIndex < 0) {
       setRestState(false);
+
+      if (isFirstMount && !reduceMotion) {
+        dividerRefs.current.forEach((el) => el && gsap.set(el, { opacity: 0 }));
+        sheetRefs.current.forEach((el) => el && gsap.set(el, { opacity: 0 }));
+
+        mountedRef.current = true;
+        if (stageRef.current) stageRef.current.classList.add('is-ready');
+
+        const revealOrder = SECTIONS.map((_, index) => index).reverse();
+        const layerDuration = 0.3;
+        const layerStep = 0.2;
+        let cursor = 0;
+
+        const intro = gsap.timeline({
+          onStart: () => setIsAnimating(true),
+          onComplete: () => {
+            // Snap once to the mathematically exact resting state so the intro
+            // can never leave a tiny opacity/transform residue behind.
+            setRestState(false);
+            setIsAnimating(false);
+            timelineRef.current = null;
+          },
+        });
+        timelineRef.current = intro;
+
+        // First: Process → Services → About → Contact → Projects.
+        revealOrder.forEach((index) => {
+          intro.to(
+            dividerRefs.current[index],
+            { opacity: 1, duration: layerDuration, ease: EASE.enter },
+            cursor
+          );
+          cursor += layerStep;
+        });
+
+        // Then the papers from bottom to top, each already sitting at its
+        // correct interleaved depth between the corresponding dividers.
+        cursor += 0.08;
+        revealOrder.forEach((index) => {
+          intro.to(
+            sheetRefs.current[index],
+            { opacity: 1, duration: layerDuration, ease: EASE.enter },
+            cursor
+          );
+          cursor += layerStep;
+        });
+
+        return () => intro.kill();
+      }
     } else {
-      // A deep-linked open page is shown directly rather than flying in from
-      // an arbitrary pre-hydration position.
+      // A deep-linked open page is shown directly rather than replaying the
+      // homepage intro first.
       setRestState(false);
       const selected = sheetRefs.current[activeIndex];
       const image = sheetImageRefs.current[activeIndex];
@@ -138,9 +191,7 @@ export default function FolderStack() {
       if (content) gsap.set(content, { opacity: 1, y: 0, pointerEvents: 'auto' });
     }
 
-    if (!mountedRef.current) {
-      // The homepage should appear fully assembled on the very first paint.
-      // No intro/settling animation: all folders and papers are visible at once.
+    if (isFirstMount) {
       mountedRef.current = true;
       if (stageRef.current) stageRef.current.classList.add('is-ready');
     }

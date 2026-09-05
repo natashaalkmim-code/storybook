@@ -39,7 +39,10 @@ const Sheet = forwardRef(function Sheet(
           disabled={disabled}
           onClick={() => onSelect(section.id)}
           aria-label={`Open ${section.label}`}
-          style={{ transform: rotation }}
+          style={{
+            transform: rotation,
+            clipPath: section.sheetHitClip ?? undefined,
+          }}
         >
           <span className="sr-only">{section.label}</span>
         </button>
