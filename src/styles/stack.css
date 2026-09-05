@@ -1,0 +1,291 @@
+/* ---------------------------------------------------------------------------
+   STACK
+   ---------------------------------------------------------------------------
+   Layout and surface styling for the 3D folder stack. Positional MATH
+   (translateZ, translateY, width/height at rest and open) is owned entirely
+   by GSAP via src/config/geometry.js — nothing here sets those. This file is
+   responsible for everything GSAP doesn't touch: shape, color, type, shadow,
+   and the perspective container itself.
+*/
+
+.storybook-scene {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- brand header -------------------------------------------------------- */
+
+.brand-header {
+  display: flex;
+  justify-content: center;
+  padding: clamp(1.5rem, 5vw, 3rem) 1rem 0;
+  position: relative;
+  z-index: 2;
+}
+
+.brand-header__mark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  text-decoration: none;
+  color: var(--color-cream);
+  touch-action: manipulation;
+}
+
+.brand-header__flourish {
+  width: 2.75rem;
+  height: 1.3rem;
+  fill: none;
+  stroke: var(--color-lilac);
+  stroke-width: 2.25;
+}
+
+.brand-header__wordmark {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1.1;
+}
+
+.brand-header__wordmark-main {
+  font-family: var(--font-display);
+  font-size: clamp(1.4rem, 1rem + 1.2vw, 1.9rem);
+  letter-spacing: 0.01em;
+}
+
+.brand-header__wordmark-sub {
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  color: var(--color-cream-dim);
+  margin-top: 0.3rem;
+}
+
+/* ---- perspective scene ---------------------------------------------------- */
+
+.stack-scene {
+  position: relative;
+  flex: 1;
+  min-height: 440px;
+  perspective: var(--stack-perspective, 1800px);
+}
+
+.stack3d {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  visibility: hidden; /* lifted once FolderStack has set real positions, avoiding a flash at (0,0,0) */
+}
+
+.stack-scene.is-ready .stack3d {
+  visibility: visible;
+}
+
+/* ---- divider (the folder tab — also the nav) ------------------------------ */
+
+.divider {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 320px;
+  height: 96px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  will-change: transform;
+}
+
+.divider:disabled {
+  cursor: default;
+}
+
+.divider__shape {
+  position: absolute;
+  inset: 0;
+  display: block;
+  border-radius: 10px 10px 4px 4px;
+  overflow: hidden;
+  transition: filter 0.2s ease;
+}
+
+.divider__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  user-select: none;
+}
+
+.divider__fallback {
+  position: absolute;
+  inset: 0;
+  background: var(--divider-color);
+}
+
+.divider--purple {
+  --divider-color: var(--color-purple);
+  --divider-ink: var(--color-ink);
+}
+.divider--lilac {
+  --divider-color: var(--color-lilac);
+  --divider-ink: var(--color-ink);
+}
+.divider--green {
+  --divider-color: var(--color-green);
+  --divider-ink: var(--color-ink);
+}
+.divider--wine {
+  --divider-color: var(--color-wine);
+  --divider-ink: var(--color-cream);
+}
+.divider--deep-purple {
+  --divider-color: var(--color-deep-purple);
+  --divider-ink: var(--color-cream);
+}
+
+.divider__label {
+  position: absolute;
+  left: 1.4rem;
+  bottom: 0.85rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 0.9rem + 0.4vw, 1.3rem);
+  color: var(--divider-ink);
+  pointer-events: none;
+}
+
+.divider--active .divider__shape {
+  filter: brightness(1.06);
+}
+
+.divider:focus-visible {
+  outline-offset: 4px;
+}
+
+/* ---- sheet (the paper — becomes the full page) ---------------------------- */
+
+.sheet {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 280px;
+  height: 360px;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 30px 70px -24px rgba(8, 4, 10, 0.6);
+  will-change: transform;
+}
+
+.sheet:not(.sheet--active) {
+  pointer-events: none;
+}
+
+.sheet__paper {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--color-paper);
+}
+
+.sheet__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sheet__fallback {
+  position: absolute;
+  inset: 0;
+  background: var(--color-paper-dim);
+}
+
+.sheet__content {
+  position: absolute;
+  inset: 0;
+  padding: clamp(1.5rem, 2vw + 1rem, 3rem);
+  overflow-y: auto;
+  color: var(--color-ink);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---- section page chrome (title + close, shared by all five pages) -------- */
+
+.section-page {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.section-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.section-page__title {
+  font-family: var(--font-display);
+  font-size: var(--fs-h1);
+  color: var(--color-ink);
+}
+
+.section-page__body {
+  flex: 1;
+}
+
+.close-button {
+  position: relative;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.2s ease;
+}
+
+.close-button:hover:not(:disabled) {
+  background: rgba(36, 24, 39, 0.08);
+}
+
+.close-button:disabled {
+  cursor: default;
+}
+
+.close-button__line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 1.05rem;
+  height: 2px;
+  background: var(--color-ink);
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.close-button__line + .close-button__line {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+/* ---- small-screen adjustments not already covered by STACK_CONFIG tiers --- */
+
+@media (max-width: 619px) {
+  .stack-scene {
+    min-height: 380px;
+  }
+
+  .sheet__content {
+    padding: 1.25rem;
+  }
+
+  .divider__label {
+    left: 1.1rem;
+    bottom: 0.6rem;
+  }
+}
