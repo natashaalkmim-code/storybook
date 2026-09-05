@@ -124,49 +124,104 @@ export default function FolderStack() {
       setRestState(false);
 
       if (isFirstMount && !reduceMotion) {
-        dividerRefs.current.forEach((el) => el && gsap.set(el, { opacity: 0 }));
-        sheetRefs.current.forEach((el) => el && gsap.set(el, { opacity: 0 }));
+        const revealOrder = SECTIONS.map((_, index) => index).reverse();
+
+        // Start each plane just a little above and farther away than its final
+        // position. The movement is deliberately small: it should feel like
+        // paper finishing settling into a filing stack, not like cards flying
+        // in or bouncing into place.
+        revealOrder.forEach((index) => {
+          const divider = dividerRefs.current[index];
+          const sheet = sheetRefs.current[index];
+          const m = measurements[index];
+
+          if (divider) {
+            gsap.set(divider, {
+              ...m.divider,
+              xPercent: -50,
+              yPercent: -50,
+              y: m.divider.y - 24,
+              z: m.divider.z - 22,
+              scale: 0.988,
+              opacity: 0,
+            });
+          }
+
+          if (sheet) {
+            gsap.set(sheet, {
+              ...m.sheet,
+              xPercent: -50,
+              yPercent: -50,
+              y: m.sheet.y - 18,
+              z: m.sheet.z - 18,
+              scale: 0.985,
+              opacity: 0,
+            });
+          }
+        });
 
         mountedRef.current = true;
         if (stageRef.current) stageRef.current.classList.add('is-ready');
 
-        const revealOrder = SECTIONS.map((_, index) => index).reverse();
-        const layerDuration = 0.3;
-        const layerStep = 0.2;
+        const dividerDuration = 0.62;
+        const dividerStep = 0.17;
+        const sheetDuration = 0.66;
+        const sheetStep = 0.145;
         let cursor = 0;
 
         const intro = gsap.timeline({
           onStart: () => setIsAnimating(true),
           onComplete: () => {
-            // Snap once to the mathematically exact resting state so the intro
-            // can never leave a tiny opacity/transform residue behind.
+            // Restore the exact art-directed coordinates after the soft intro.
+            // This guarantees the animated version and the normal resting
+            // configuration are pixel-identical.
             setRestState(false);
+            dividerRefs.current.forEach((el) => el && gsap.set(el, { scale: 1 }));
+            sheetRefs.current.forEach((el) => el && gsap.set(el, { scale: 1 }));
             setIsAnimating(false);
             timelineRef.current = null;
           },
         });
         timelineRef.current = intro;
 
-        // First: Process → Services → About → Contact → Projects.
+        // Dividers settle back-to-front: Process → Services → About → Contact
+        // → Projects. The animations overlap so the scene builds continuously
+        // instead of feeling like five separate fades.
         revealOrder.forEach((index) => {
+          const m = measurements[index];
           intro.to(
             dividerRefs.current[index],
-            { opacity: 1, duration: layerDuration, ease: EASE.enter },
+            {
+              y: m.divider.y,
+              z: m.divider.z,
+              scale: 1,
+              opacity: 1,
+              duration: dividerDuration,
+              ease: 'power4.out',
+            },
             cursor
           );
-          cursor += layerStep;
+          cursor += dividerStep;
         });
 
-        // Then the papers from bottom to top, each already sitting at its
-        // correct interleaved depth between the corresponding dividers.
-        cursor += 0.08;
+        // Once the folders are nearly settled, the papers follow in the same
+        // bottom-to-top order, already at their correct interleaved depth.
+        cursor += 0.04;
         revealOrder.forEach((index) => {
+          const m = measurements[index];
           intro.to(
             sheetRefs.current[index],
-            { opacity: 1, duration: layerDuration, ease: EASE.enter },
+            {
+              y: m.sheet.y,
+              z: m.sheet.z,
+              scale: 1,
+              opacity: 1,
+              duration: sheetDuration,
+              ease: 'power4.out',
+            },
             cursor
           );
-          cursor += layerStep;
+          cursor += sheetStep;
         });
 
         return () => intro.kill();
