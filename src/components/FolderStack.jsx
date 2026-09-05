@@ -186,9 +186,29 @@ export default function FolderStack() {
 
       SECTIONS.forEach((_, index) => {
         const m = measurements[index];
-        tl.to(dividerRefs.current[index], { ...m.divider, width: m.divider.width, height: m.divider.height, x: 0, y: m.divider.y, z: m.divider.z, opacity: 1, duration: t(TIMING.close), ease: EASE.standard }, 0.02);
-        tl.to(sheetRefs.current[index], { ...m.sheet, width: m.sheet.width, height: m.sheet.height, x: 0, y: m.sheet.y, z: m.sheet.z, opacity: 1, duration: t(TIMING.close), ease: EASE.standard }, 0.02);
+        tl.to(dividerRefs.current[index], {
+          ...m.divider,
+          xPercent: -50,
+          yPercent: -50,
+          opacity: 1,
+          duration: t(TIMING.close),
+          ease: EASE.standard,
+        }, 0.02);
+        tl.to(sheetRefs.current[index], {
+          ...m.sheet,
+          xPercent: -50,
+          yPercent: -50,
+          opacity: 1,
+          borderRadius: 0,
+          duration: t(TIMING.close),
+          ease: EASE.standard,
+        }, 0.02);
       });
+
+      // Force the exact mathematically defined homepage state once the reverse
+      // animation finishes. This prevents any accumulated GSAP transform from
+      // leaving a sheet centered or a few pixels away from its original place.
+      tl.add(() => setRestState(false), t(TIMING.close) + 0.03);
       tl.set(content, { pointerEvents: 'none' });
       return () => tl.kill();
     }
@@ -310,6 +330,8 @@ export default function FolderStack() {
                 ref={(el) => { sheetRefs.current[index] = el; }}
                 section={section}
                 isActive={activeIndex === index}
+                disabled={isAnimating || Boolean(activeId)}
+                onSelect={openSection}
                 imageRef={(el) => { sheetImageRefs.current[index] = el; }}
                 surfaceRef={(el) => { surfaceRefs.current[index] = el; }}
                 contentRef={(el) => { contentRefs.current[index] = el; }}

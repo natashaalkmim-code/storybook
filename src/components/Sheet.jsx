@@ -1,11 +1,24 @@
 import { forwardRef } from 'react';
 
 const Sheet = forwardRef(function Sheet(
-  { section, children, isActive, surfaceRef, imageRef, contentRef },
+  {
+    section,
+    children,
+    isActive,
+    disabled,
+    onSelect,
+    surfaceRef,
+    imageRef,
+    contentRef,
+  },
   ref
 ) {
+  const rotation = section.sheetImageRotation
+    ? `rotate(${section.sheetImageRotation}deg)`
+    : undefined;
+
   return (
-    <div ref={ref} className={`sheet-plane${isActive ? ' is-active' : ''}`} aria-hidden={!isActive}>
+    <div ref={ref} className={`sheet-plane${isActive ? ' is-active' : ''}`}>
       <img
         ref={imageRef}
         className="sheet-plane__asset"
@@ -15,13 +28,30 @@ const Sheet = forwardRef(function Sheet(
         style={{
           objectFit: section.sheetFit ?? 'contain',
           objectPosition: section.sheetObjectPosition ?? '50% 50%',
-          transform: section.sheetImageRotation
-            ? `rotate(${section.sheetImageRotation}deg)`
-            : undefined,
+          transform: rotation,
         }}
       />
+
+      {!isActive && (
+        <button
+          type="button"
+          className="sheet-plane__hit"
+          disabled={disabled}
+          onClick={() => onSelect(section.id)}
+          aria-label={`Open ${section.label}`}
+          style={{ transform: rotation }}
+        >
+          <span className="sr-only">{section.label}</span>
+        </button>
+      )}
+
       <div ref={surfaceRef} className="sheet-plane__surface" />
-      <div ref={contentRef} className="sheet-plane__content" tabIndex={-1}>
+      <div
+        ref={contentRef}
+        className="sheet-plane__content"
+        tabIndex={-1}
+        aria-hidden={!isActive}
+      >
         {children}
       </div>
     </div>
