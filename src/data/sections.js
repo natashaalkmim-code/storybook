@@ -1,14 +1,10 @@
 /*
-  These PNGs are the actual interface artwork.
+  Closed stack art direction.
 
-  shoulderYRatio is the Y position of the folder's long horizontal shoulder,
-  divided by the PNG width. measureScene() aligns those visual anchors at an
-  equal interval, so the visible divider spacing stays uniform even though the
-  source PNG canvases have different transparent padding.
-
-  sheetXRatio / sheetTopRatio / sheetWidthRatio reproduce the loose-paper
-  composition from the supplied Storybook mockup. They are viewport-relative,
-  so the arrangement scales rather than being tied to one screenshot size.
+  The four pale papers below are the new, taller PNG exports supplied for the
+  final composition. Their rotation is already baked into the PNGs, so the code
+  only controls scale and placement. The values are viewport-relative and were
+  tuned against the complete Storybook reference composition.
 */
 export const SECTIONS = [
   {
@@ -19,15 +15,13 @@ export const SECTIONS = [
     shoulderYRatio: 150 / 1611,
     tabX: 0.155,
 
-    // Wide pale sheet leaning up to the right, behind Projects.
+    // NEW sheet-c = the nearly horizontal paper behind Projects.
     sheetImage: '/assets/sheets/sheet-c.png',
-    sheetRatio: 800 / 909,
-    sheetWidthRatio: 0.424,
-    sheetXRatio: -0.221,
-    // Slightly lower so the final sheet behind Projects is more visible.
-    sheetTopRatio: 0.247,
-    // Projects is the farthest/last loose sheet. Give its whole image box a
-    // click target so every visible part reliably opens Projects.
+    sheetRatio: 1188 / 882,
+    sheetWidthRatio: 0.8584,
+    sheetWidthMax: 1600,
+    sheetXRatio: -0.0116,
+    sheetTopRatio: 0.2376,
     sheetHitClip: 'none',
   },
   {
@@ -38,13 +32,14 @@ export const SECTIONS = [
     shoulderYRatio: 157 / 1792,
     tabX: 0.52,
 
-    // Pale sheet on the right, behind Contact.
+    // NEW sheet-a = the long slanted paper behind Contact.
     sheetImage: '/assets/sheets/sheet-a.png',
-    sheetRatio: 842 / 952,
-    sheetWidthRatio: 0.427,
-    sheetXRatio: 0.231,
-    sheetTopRatio: 0.294,
-    sheetHitClip: 'polygon(17.4% 0%, 100% 12.9%, 82.4% 100%, 0% 87%)',
+    sheetRatio: 1507 / 810,
+    sheetWidthRatio: 0.6808,
+    sheetWidthMax: 1280,
+    sheetXRatio: -0.0082,
+    sheetTopRatio: 0.3676,
+    sheetHitClip: 'none',
   },
   {
     id: 'about',
@@ -54,11 +49,11 @@ export const SECTIONS = [
     shoulderYRatio: 119 / 1792,
     tabX: 0.315,
 
-    // The reference composition has a dark textured paper here. Reuse the
-    // supplied Storybook background texture instead of inventing a new asset.
+    // Dark sheet is unchanged.
     sheetImage: '/assets/sheets/sheet-dark.png',
     sheetRatio: 1234 / 787,
     sheetWidthRatio: 0.67,
+    sheetWidthMax: 1260,
     sheetXRatio: 0.13,
     sheetTopRatio: 0.492,
     sheetFit: 'contain',
@@ -72,13 +67,14 @@ export const SECTIONS = [
     shoulderYRatio: 177 / 1792,
     tabX: 0.62,
 
-    // Narrow pale sheet on the right, behind Services.
+    // NEW sheet-b = the taller paper behind Services.
     sheetImage: '/assets/sheets/sheet-b.png',
-    sheetRatio: 446 / 870,
-    sheetWidthRatio: 0.22,
-    sheetXRatio: 0.271,
-    sheetTopRatio: 0.595,
-    sheetHitClip: 'polygon(15.4% 0%, 100% 3.5%, 84.4% 100%, 0% 96.4%)',
+    sheetRatio: 1224 / 935,
+    sheetWidthRatio: 0.7018,
+    sheetWidthMax: 1320,
+    sheetXRatio: 0.1447,
+    sheetTopRatio: 0.5796,
+    sheetHitClip: 'none',
   },
   {
     id: 'process',
@@ -88,13 +84,14 @@ export const SECTIONS = [
     shoulderYRatio: 199 / 1792,
     tabX: 0.5,
 
-    // Wide pale sheet on the left, behind Process.
+    // NEW sheet-d = the wide paper behind Process.
     sheetImage: '/assets/sheets/sheet-d.png',
-    sheetRatio: 720 / 772,
-    sheetWidthRatio: 0.387,
-    sheetXRatio: -0.247,
-    sheetTopRatio: 0.67,
-    sheetHitClip: 'polygon(13% 0%, 100% 11%, 86.9% 100%, 0% 88.7%)',
+    sheetRatio: 1536 / 884,
+    sheetWidthRatio: 0.8796,
+    sheetWidthMax: 1640,
+    sheetXRatio: -0.0243,
+    sheetTopRatio: 0.6926,
+    sheetHitClip: 'none',
   },
 ];
 
