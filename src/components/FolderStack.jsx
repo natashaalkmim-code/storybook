@@ -139,19 +139,10 @@ export default function FolderStack() {
     }
 
     if (!mountedRef.current) {
+      // The homepage should appear fully assembled on the very first paint.
+      // No intro/settling animation: all folders and papers are visible at once.
       mountedRef.current = true;
       if (stageRef.current) stageRef.current.classList.add('is-ready');
-      if (activeIndex < 0) {
-        const layers = [...sheetRefs.current, ...dividerRefs.current].filter(Boolean);
-        gsap.from(layers, {
-          y: '-=34',
-          z: '-=40',
-          opacity: 0,
-          duration: TIMING.intro,
-          stagger: 0.035,
-          ease: EASE.enter,
-        });
-      }
     }
   // Deliberately NOT dependent on activeIndex. Route changes are animated by
   // the effect below. This layout effect only handles first paint and real
