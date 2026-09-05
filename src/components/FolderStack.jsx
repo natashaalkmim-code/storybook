@@ -126,10 +126,11 @@ export default function FolderStack() {
       if (isFirstMount && !reduceMotion) {
         const revealOrder = SECTIONS.map((_, index) => index).reverse();
 
-        // Start each plane just a little above and farther away than its final
-        // position. The movement is deliberately small: it should feel like
-        // paper finishing settling into a filing stack, not like cards flying
-        // in or bouncing into place.
+        // Put every plane at its FINAL depth before it becomes visible.
+        // Especially for the loose papers, animating through Z while a large
+        // transparent PNG is being composited can look slightly stepped. The
+        // intro therefore keeps the correct interleaved depth from frame one
+        // and uses only a tiny Y/scale settle.
         revealOrder.forEach((index) => {
           const divider = dividerRefs.current[index];
           const sheet = sheetRefs.current[index];
@@ -140,10 +141,11 @@ export default function FolderStack() {
               ...m.divider,
               xPercent: -50,
               yPercent: -50,
-              y: m.divider.y - 24,
-              z: m.divider.z - 22,
-              scale: 0.988,
-              opacity: 0,
+              y: m.divider.y - 18,
+              z: m.divider.z,
+              scale: 0.994,
+              autoAlpha: 0,
+              force3D: true,
             });
           }
 
@@ -152,10 +154,11 @@ export default function FolderStack() {
               ...m.sheet,
               xPercent: -50,
               yPercent: -50,
-              y: m.sheet.y - 18,
-              z: m.sheet.z - 18,
-              scale: 0.985,
-              opacity: 0,
+              y: m.sheet.y - 10,
+              z: m.sheet.z,
+              scale: 0.997,
+              autoAlpha: 0,
+              force3D: true,
             });
           }
         });
@@ -163,68 +166,93 @@ export default function FolderStack() {
         mountedRef.current = true;
         if (stageRef.current) stageRef.current.classList.add('is-ready');
 
-        const dividerDuration = 0.62;
-        const dividerStep = 0.17;
-        const sheetDuration = 0.66;
-        const sheetStep = 0.145;
-        let cursor = 0;
+        let cancelled = false;
+        let intro = null;
 
-        const intro = gsap.timeline({
-          onStart: () => setIsAnimating(true),
-          onComplete: () => {
-            // Restore the exact art-directed coordinates after the soft intro.
-            // This guarantees the animated version and the normal resting
-            // configuration are pixel-identical.
-            setRestState(false);
-            dividerRefs.current.forEach((el) => el && gsap.set(el, { scale: 1 }));
-            sheetRefs.current.forEach((el) => el && gsap.set(el, { scale: 1 }));
-            setIsAnimating(false);
-            timelineRef.current = null;
-          },
-        });
-        timelineRef.current = intro;
+        const startIntro = () => {
+          if (cancelled) return;
 
-        // Dividers settle back-to-front: Process → Services → About → Contact
-        // → Projects. The animations overlap so the scene builds continuously
-        // instead of feeling like five separate fades.
-        revealOrder.forEach((index) => {
-          const m = measurements[index];
-          intro.to(
-            dividerRefs.current[index],
-            {
-              y: m.divider.y,
-              z: m.divider.z,
-              scale: 1,
-              opacity: 1,
-              duration: dividerDuration,
-              ease: 'power4.out',
+          const dividerDuration = 0.72;
+          const dividerStep = 0.15;
+          const sheetDuration = 0.88;
+          const sheetStep = 0.12;
+          let cursor = 0;
+
+          intro = gsap.timeline({
+            onStart: () => setIsAnimating(true),
+            onComplete: () => {
+              // Restore the exact art-directed coordinates after the intro so
+              // the animated and non-animated homepage are pixel-identical.
+              setRestState(false);
+              dividerRefs.current.forEach((el) => el && gsap.set(el, { scale: 1, clearProps: 'visibility' }));
+              sheetRefs.current.forEach((el) => el && gsap.set(el, { scale: 1, clearProps: 'visibility' }));
+              setIsAnimating(false);
+              timelineRef.current = null;
             },
-            cursor
-          );
-          cursor += dividerStep;
+          });
+          timelineRef.current = intro;
+
+          // Process → Services → About → Contact → Projects.
+          revealOrder.forEach((index) => {
+            const m = measurements[index];
+            intro.to(
+              dividerRefs.current[index],
+              {
+                y: m.divider.y,
+                scale: 1,
+                autoAlpha: 1,
+                duration: dividerDuration,
+                ease: 'sine.out',
+                force3D: true,
+              },
+              cursor
+            );
+            cursor += dividerStep;
+          });
+
+          // The papers follow bottom-to-top. They are already at the correct Z
+          // (behind their own divider) and simply finish settling vertically.
+          // Longer overlap + sine easing removes the stop/start feeling.
+          cursor += 0.02;
+          revealOrder.forEach((index) => {
+            const m = measurements[index];
+            intro.to(
+              sheetRefs.current[index],
+              {
+                y: m.sheet.y,
+                scale: 1,
+                autoAlpha: 1,
+                duration: sheetDuration,
+                ease: 'sine.out',
+                force3D: true,
+              },
+              cursor
+            );
+            cursor += sheetStep;
+          });
+        };
+
+        // Decode the supplied PNGs before moving them. This prevents the first
+        // animation frames from stuttering while the browser rasterizes a large
+        // transparent paper/folder image for the first time.
+        const images = [
+          ...dividerRefs.current.map((el) => el?.querySelector('img')),
+          ...sheetImageRefs.current,
+        ].filter(Boolean);
+
+        const decodeJobs = images.map((img) => {
+          if (typeof img.decode !== 'function') return Promise.resolve();
+          return img.decode().catch(() => undefined);
         });
 
-        // Once the folders are nearly settled, the papers follow in the same
-        // bottom-to-top order, already at their correct interleaved depth.
-        cursor += 0.04;
-        revealOrder.forEach((index) => {
-          const m = measurements[index];
-          intro.to(
-            sheetRefs.current[index],
-            {
-              y: m.sheet.y,
-              z: m.sheet.z,
-              scale: 1,
-              opacity: 1,
-              duration: sheetDuration,
-              ease: 'power4.out',
-            },
-            cursor
-          );
-          cursor += sheetStep;
+        Promise.allSettled(decodeJobs).then(() => {
+          requestAnimationFrame(startIntro);
         });
 
-        return () => intro.kill();
+        return () => {
+          cancelled = true;
+          if (intro) intro.kill();
+        };
       }
     } else {
       // A deep-linked open page is shown directly rather than replaying the
@@ -284,10 +312,25 @@ export default function FolderStack() {
       const image = sheetImageRefs.current[from];
       const surface = surfaceRefs.current[from];
       const content = contentRefs.current[from];
+      const selectedDivider = dividerRefs.current[from];
+      const selectedSheet = sheetRefs.current[from];
+
+      // While a page is open, its sheet is at z: 0 and its divider has been
+      // pushed far behind the viewport. If both simply tween back from those
+      // values, the paper necessarily travels IN FRONT of its own divider for
+      // most of the closing animation. Put the divider one depth unit in front
+      // BEFORE it comes back on-screen, then tween both with the same timing.
+      // Their Z gap therefore stays positive for the entire return.
+      if (selectedDivider && selectedSheet) {
+        gsap.set(selectedDivider, {
+          z: 1,
+          force3D: true,
+        });
+      }
 
       tl.to(content, { opacity: 0, y: 12, duration: t(0.22), ease: EASE.exit }, 0)
         .to(surface, { opacity: 0, duration: t(0.25), ease: EASE.exit }, 0.06)
-        .to(image, { opacity: 1, duration: t(0.28), ease: EASE.enter }, 0.08)
+        .to(image, { opacity: 1, duration: t(0.34), ease: 'sine.out' }, 0.08)
         .to(stackRef.current, { rotationX: config.rotateX, duration: t(TIMING.close), ease: EASE.standard }, 0.02);
 
       SECTIONS.forEach((_, index) => {
@@ -299,6 +342,7 @@ export default function FolderStack() {
           opacity: 1,
           duration: t(TIMING.close),
           ease: EASE.standard,
+          force3D: true,
         }, 0.02);
         tl.to(sheetRefs.current[index], {
           ...m.sheet,
@@ -308,6 +352,7 @@ export default function FolderStack() {
           borderRadius: 0,
           duration: t(TIMING.close),
           ease: EASE.standard,
+          force3D: true,
         }, 0.02);
       });
 
