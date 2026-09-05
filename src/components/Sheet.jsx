@@ -6,7 +6,20 @@ const Sheet = forwardRef(function Sheet(
 ) {
   return (
     <div ref={ref} className={`sheet-plane${isActive ? ' is-active' : ''}`} aria-hidden={!isActive}>
-      <img ref={imageRef} className="sheet-plane__asset" src={section.sheetImage} alt="" draggable="false" />
+      <img
+        ref={imageRef}
+        className="sheet-plane__asset"
+        src={section.sheetImage}
+        alt=""
+        draggable="false"
+        style={{
+          objectFit: section.sheetFit ?? 'contain',
+          objectPosition: section.sheetObjectPosition ?? '50% 50%',
+          transform: section.sheetImageRotation
+            ? `rotate(${section.sheetImageRotation}deg)`
+            : undefined,
+        }}
+      />
       <div ref={surfaceRef} className="sheet-plane__surface" />
       <div ref={contentRef} className="sheet-plane__content" tabIndex={-1}>
         {children}
