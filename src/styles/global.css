@@ -1,0 +1,33 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { width: 100%; height: 100%; }
+html { background: #1d1920; }
+body { margin: 0; overflow: hidden; font-family: Georgia, 'Times New Roman', serif; color: #262029; }
+button, input { font: inherit; }
+button { color: inherit; }
+a { color: inherit; }
+img { display: block; }
+h1, h2, p { margin: 0; }
+ul, ol { list-style: none; padding: 0; margin: 0; }
+
+:root {
+  --paper: #ececf1;
+  --ink: #2b2430;
+  --ink-soft: #645c68;
+  --line: rgba(43, 36, 48, 0.2);
+  --purple: #8d63ed;
+}
+
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+:focus-visible { outline: 2px solid #b296ff; outline-offset: 4px; }
+::selection { background: #8d63ed; color: white; }

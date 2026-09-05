@@ -1,0 +1,137 @@
+.storybook-scene {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  background: #1d1920;
+}
+
+.storybook-scene__background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0%;
+  user-select: none;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.stack-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  perspective: var(--scene-perspective, 1200px);
+  perspective-origin: 50% 52%;
+  opacity: 0;
+  transition: opacity 0.25s linear;
+}
+
+.stack-stage.is-ready { opacity: 1; }
+
+.stack3d {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform-origin: 50% 52%;
+  will-change: transform;
+}
+
+.stack-pair { display: contents; }
+
+.divider-plane,
+.sheet-plane {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50%;
+  will-change: transform, opacity, width, height;
+}
+
+.divider-plane {
+  pointer-events: none;
+}
+
+.divider-plane__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: 50% 0;
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Only the actual tab zone receives pointer events. The transparent rectangle
+   around each giant PNG cannot block the folders behind it. */
+.divider-plane__hit {
+  position: absolute;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.divider-plane__hit:disabled { cursor: default; }
+
+.sheet-plane {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.sheet-plane__asset,
+.sheet-plane__surface,
+.sheet-plane__content {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sheet-plane__asset {
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.sheet-plane__surface {
+  opacity: 0;
+  background: var(--paper);
+  box-shadow: 0 24px 80px rgba(10, 7, 12, 0.32);
+  pointer-events: none;
+}
+
+.sheet-plane__content {
+  opacity: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: max(28px, env(safe-area-inset-top)) max(26px, env(safe-area-inset-right)) max(32px, env(safe-area-inset-bottom)) max(26px, env(safe-area-inset-left));
+  pointer-events: none;
+  color: var(--ink);
+  background: transparent;
+}
+
+.sheet-plane.is-active { pointer-events: auto; }
+
+@media (max-width: 639px) {
+  .storybook-scene__background {
+    object-fit: cover;
+    object-position: 50% 0%;
+  }
+
+  .sheet-plane__content {
+    padding-top: max(22px, env(safe-area-inset-top));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stack-stage { transition: none; }
+}
