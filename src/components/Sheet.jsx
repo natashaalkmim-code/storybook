@@ -17,8 +17,22 @@ const Sheet = forwardRef(function Sheet(
     ? `rotate(${section.sheetImageRotation}deg)`
     : undefined;
 
+  const activateSheet = () => {
+    if (!isActive && !disabled) onSelect(section.id);
+  };
+
   return (
-    <div ref={ref} className={`sheet-plane${isActive ? ' is-active' : ''}`}>
+    <div
+      ref={ref}
+      className={`sheet-plane${isActive ? ' is-active' : ''}`}
+      // Fallback hit area for the actual PNG bounds. The clipped button below
+      // remains the precise target for most sheets, while this makes exposed
+      // paper pixels (especially the farthest Projects sheet) reliably open.
+      style={{ pointerEvents: !isActive && !disabled ? 'auto' : undefined }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) activateSheet();
+      }}
+    >
       <img
         ref={imageRef}
         className="sheet-plane__asset"
@@ -37,7 +51,10 @@ const Sheet = forwardRef(function Sheet(
           type="button"
           className="sheet-plane__hit"
           disabled={disabled}
-          onClick={() => onSelect(section.id)}
+          onClick={(event) => {
+            event.stopPropagation();
+            activateSheet();
+          }}
           aria-label={`Open ${section.label}`}
           style={{
             transform: rotation,

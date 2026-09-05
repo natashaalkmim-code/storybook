@@ -314,52 +314,85 @@ export default function FolderStack() {
       const content = contentRefs.current[from];
       const selectedDivider = dividerRefs.current[from];
       const selectedSheet = sheetRefs.current[from];
+      const selectedMeasurement = measurements[from];
+      const returnStart = t(0.08);
+      const returnDuration = t(TIMING.close);
 
-      // While a page is open, its sheet is at z: 0 and its divider has been
-      // pushed far behind the viewport. If both simply tween back from those
-      // values, the paper necessarily travels IN FRONT of its own divider for
-      // most of the closing animation. Put the divider one depth unit in front
-      // BEFORE it comes back on-screen, then tween both with the same timing.
-      // Their Z gap therefore stays positive for the entire return.
+      // The open paper is at z: 0. Before it starts travelling back, place its
+      // OWN divider clearly in front of it. Then animate the divider and paper
+      // with the exact same duration/ease. Because the depth gap is positive at
+      // BOTH endpoints, the paper can never flash in front of its divider on
+      // the way home.
       if (selectedDivider && selectedSheet) {
+        const closeFrontGap = 28;
         gsap.set(selectedDivider, {
-          z: 1,
+          z: Math.max(
+            selectedMeasurement.divider.z + closeFrontGap,
+            closeFrontGap
+          ),
+          opacity: 1,
           force3D: true,
         });
       }
 
       tl.to(content, { opacity: 0, y: 12, duration: t(0.22), ease: EASE.exit }, 0)
-        .to(surface, { opacity: 0, duration: t(0.25), ease: EASE.exit }, 0.06)
-        .to(image, { opacity: 1, duration: t(0.34), ease: 'sine.out' }, 0.08)
-        .to(stackRef.current, { rotationX: config.rotateX, duration: t(TIMING.close), ease: EASE.standard }, 0.02);
+        .to(surface, { opacity: 0, duration: t(0.25), ease: EASE.exit }, t(0.04))
+        .to(image, { opacity: 1, duration: t(0.34), ease: 'sine.out' }, t(0.06))
+        .to(stackRef.current, { rotationX: config.rotateX, duration: returnDuration, ease: EASE.standard }, returnStart);
 
+      // Everything that was already behind its own divider keeps its existing
+      // interleaved depth relationship while returning.
       SECTIONS.forEach((_, index) => {
+        if (index === from) return;
         const m = measurements[index];
         tl.to(dividerRefs.current[index], {
           ...m.divider,
           xPercent: -50,
           yPercent: -50,
           opacity: 1,
-          duration: t(TIMING.close),
+          duration: returnDuration,
           ease: EASE.standard,
           force3D: true,
-        }, 0.02);
+        }, returnStart);
         tl.to(sheetRefs.current[index], {
           ...m.sheet,
           xPercent: -50,
           yPercent: -50,
           opacity: 1,
           borderRadius: 0,
-          duration: t(TIMING.close),
+          duration: returnDuration,
           ease: EASE.standard,
           force3D: true,
-        }, 0.02);
+        }, returnStart);
       });
 
-      // Force the exact mathematically defined homepage state once the reverse
-      // animation finishes. This prevents any accumulated GSAP transform from
-      // leaving a sheet centered or a few pixels away from its original place.
-      tl.add(() => setRestState(false), t(TIMING.close) + 0.03);
+      // Return the selected pair together. The divider starts 28 depth units in
+      // front and ends at its normal 0.5-unit lead over the paper, so there is
+      // no crossover frame at all.
+      tl.to(selectedDivider, {
+        ...selectedMeasurement.divider,
+        xPercent: -50,
+        yPercent: -50,
+        opacity: 1,
+        duration: returnDuration,
+        ease: EASE.standard,
+        force3D: true,
+      }, returnStart);
+
+      tl.to(selectedSheet, {
+        ...selectedMeasurement.sheet,
+        xPercent: -50,
+        yPercent: -50,
+        opacity: 1,
+        borderRadius: 0,
+        duration: returnDuration,
+        ease: EASE.standard,
+        force3D: true,
+      }, returnStart);
+
+      // Force the exact art-directed homepage state after the reverse animation
+      // so repeated open/close cycles cannot accumulate transform drift.
+      tl.add(() => setRestState(false), returnStart + returnDuration + t(0.03));
       tl.set(content, { pointerEvents: 'none' });
       return () => tl.kill();
     }
@@ -371,19 +404,31 @@ export default function FolderStack() {
       const selectedImage = sheetImageRefs.current[to];
       const selectedSurface = surfaceRefs.current[to];
       const selectedContent = contentRefs.current[to];
+      const selectedMeasurement = measurements[to];
 
-      // First the folder itself steps forward/down to make the paper behind it
-      // physically readable as a separate plane. No bounce or overshoot.
+      // Give the folder opening a readable first beat: the divider in FRONT of
+      // the selected paper drops farther down, exposing much more of the paper
+      // and of the divider behind it. Only AFTER that settling movement does the
+      // paper begin its zoom toward the viewport.
+      const dividerRevealDrop = Math.min(180, viewport.height * 0.18);
+      const separationDuration = t(0.56);
+      const zoomStart = t(0.54);
+
       tl.to(selectedDivider, {
-        y: measurements[to].divider.y + Math.min(90, viewport.height * 0.1),
-        z: measurements[to].divider.z + 75,
-        duration: t(TIMING.separate),
-        ease: EASE.enter,
+        y: selectedMeasurement.divider.y + dividerRevealDrop,
+        z: selectedMeasurement.divider.z + 58,
+        duration: separationDuration,
+        ease: 'power3.out',
+        force3D: true,
       }, 0);
 
-      // Then the whole filing stack gently flattens while the loose sheet moves
-      // toward camera/center. The same wrapper becomes the reading page.
-      tl.to(stackRef.current, { rotationX: 0, duration: t(TIMING.open), ease: EASE.standard }, 0.16);
+      // Once the divider has almost finished lowering, the rest of the filing
+      // stack moves away and the loose paper becomes the reading surface.
+      tl.to(stackRef.current, {
+        rotationX: 0,
+        duration: t(TIMING.open),
+        ease: EASE.standard,
+      }, zoomStart);
 
       SECTIONS.forEach((_, index) => {
         const d = dividerRefs.current[index];
@@ -395,7 +440,8 @@ export default function FolderStack() {
             opacity: index === to ? 0.18 : 0,
             duration: t(TIMING.open * 0.9),
             ease: EASE.standard,
-          }, 0.18);
+            force3D: true,
+          }, zoomStart);
         }
         if (s && index !== to) {
           tl.to(s, {
@@ -404,7 +450,8 @@ export default function FolderStack() {
             opacity: 0,
             duration: t(TIMING.open * 0.9),
             ease: EASE.standard,
-          }, 0.18);
+            force3D: true,
+          }, zoomStart);
         }
       });
 
@@ -417,11 +464,25 @@ export default function FolderStack() {
         opacity: 1,
         duration: t(TIMING.open),
         ease: EASE.standard,
-      }, 0.14)
-        .to(selectedImage, { opacity: 0, duration: t(TIMING.surface), ease: EASE.exit }, 0.52)
-        .to(selectedSurface, { opacity: 1, duration: t(TIMING.surface), ease: EASE.enter }, 0.5)
-        .set(selectedContent, { pointerEvents: 'auto' }, 0.64)
-        .to(selectedContent, { opacity: 1, y: 0, duration: t(TIMING.content), ease: EASE.enter }, 0.67);
+        force3D: true,
+      }, zoomStart)
+        .to(selectedImage, {
+          opacity: 0,
+          duration: t(TIMING.surface),
+          ease: EASE.exit,
+        }, zoomStart + t(0.38))
+        .to(selectedSurface, {
+          opacity: 1,
+          duration: t(TIMING.surface),
+          ease: EASE.enter,
+        }, zoomStart + t(0.36))
+        .set(selectedContent, { pointerEvents: 'auto' }, zoomStart + t(0.5))
+        .to(selectedContent, {
+          opacity: 1,
+          y: 0,
+          duration: t(TIMING.content),
+          ease: EASE.enter,
+        }, zoomStart + t(0.53));
 
       return () => tl.kill();
     }
