@@ -48,7 +48,8 @@
   top: 50%;
   transform-style: preserve-3d;
   transform-origin: 50% 50%;
-  will-change: transform, opacity, width, height;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
 }
 
 .divider-plane {
