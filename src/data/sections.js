@@ -25,6 +25,7 @@ export const SECTIONS = [
     sheetWidthRatio: 0.424,
     sheetXRatio: -0.221,
     sheetTopRatio: 0.222,
+    sheetHitClip: 'polygon(0% 7.8%, 89.5% 0%, 100% 92.1%, 10.4% 100%)',
   },
   {
     id: 'contact',
@@ -40,6 +41,7 @@ export const SECTIONS = [
     sheetWidthRatio: 0.427,
     sheetXRatio: 0.231,
     sheetTopRatio: 0.294,
+    sheetHitClip: 'polygon(17.4% 0%, 100% 12.9%, 82.4% 100%, 0% 87%)',
   },
   {
     id: 'about',
@@ -57,6 +59,7 @@ export const SECTIONS = [
     sheetXRatio: 0.13,
     sheetTopRatio: 0.492,
     sheetFit: 'contain',
+    sheetHitClip: 'polygon(4.6% 0%, 100% 12.3%, 95.3% 100%, 0% 87.5%)',
   },
   {
     id: 'services',
@@ -72,6 +75,7 @@ export const SECTIONS = [
     sheetWidthRatio: 0.22,
     sheetXRatio: 0.271,
     sheetTopRatio: 0.595,
+    sheetHitClip: 'polygon(15.4% 0%, 100% 3.5%, 84.4% 100%, 0% 96.4%)',
   },
   {
     id: 'process',
@@ -87,6 +91,7 @@ export const SECTIONS = [
     sheetWidthRatio: 0.387,
     sheetXRatio: -0.247,
     sheetTopRatio: 0.67,
+    sheetHitClip: 'polygon(13% 0%, 100% 11%, 86.9% 100%, 0% 88.7%)',
   },
 ];
 
