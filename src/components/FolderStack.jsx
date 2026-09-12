@@ -36,7 +36,6 @@ function useViewport() {
 
 const SHEET_LAYER_BASE = 20;
 const OVERLAY_SHEET_LAYER = 1000;
-const OVERLAY_DIVIDER_LAYER = 1001;
 
 function sheetLayer(index) {
   return SHEET_LAYER_BASE + index * 2;
@@ -58,8 +57,6 @@ export default function FolderStack() {
   const stackRef = useRef(null);
   const dividerRefs = useRef([]);
   const sheetRefs = useRef([]);
-  const sheetImageRefs = useRef([]);
-  const surfaceRefs = useRef([]);
   const contentRefs = useRef([]);
   const timelineRef = useRef(null);
   const previousActiveRef = useRef(activeIndex);
@@ -71,11 +68,12 @@ export default function FolderStack() {
     [viewport, config]
   );
 
+  // Dividers never move again after this. Every open/close beat below only
+  // ever touches the one selected sheet — the divider it sits under, and
+  // every other pair on the stack, stay exactly where they are.
   const setPairRest = useCallback((index) => {
     const d = dividerRefs.current[index];
     const s = sheetRefs.current[index];
-    const image = sheetImageRefs.current[index];
-    const surface = surfaceRefs.current[index];
     const content = contentRefs.current[index];
     const m = measurements[index];
 
@@ -100,15 +98,10 @@ export default function FolderStack() {
         xPercent: -50,
         yPercent: -50,
         opacity: 1,
-        borderRadius: 0,
-        scaleX: 1,
-        scaleY: 1,
         force3D: false,
       });
     }
 
-    if (image) gsap.set(image, { opacity: 1 });
-    if (surface) gsap.set(surface, { opacity: 0 });
     if (content) gsap.set(content, { opacity: 0, y: 16, pointerEvents: 'none' });
   }, [measurements]);
 
@@ -126,54 +119,27 @@ export default function FolderStack() {
     SECTIONS.forEach((_, index) => setPairRest(index));
   }, [setPairRest]);
 
-  const setNonSelectedRest = useCallback((selectedIndex) => {
-    SECTIONS.forEach((_, index) => {
-      if (index !== selectedIndex) setPairRest(index);
-    });
-  }, [setPairRest]);
-
   const setOpenState = useCallback((index) => {
     setRestState();
 
     const selected = sheetRefs.current[index];
-    const divider = dividerRefs.current[index];
-    const image = sheetImageRefs.current[index];
-    const surface = surfaceRefs.current[index];
     const content = contentRefs.current[index];
-    const m = measurements[index];
 
     if (selected) {
       gsap.set(selected, {
         x: 0,
         y: 0,
         z: 0,
-        width: viewport.width + 2,
-        height: viewport.height + 2,
+        width: viewport.width,
+        height: viewport.height,
         xPercent: -50,
         yPercent: -50,
-        scaleX: 1,
-        scaleY: 1,
         opacity: 1,
         zIndex: OVERLAY_SHEET_LAYER,
         force3D: false,
       });
     }
 
-    if (divider) {
-      gsap.set(divider, {
-        ...m.divider,
-        y: m.divider.y + viewport.height * 0.9,
-        z: 0,
-        zIndex: OVERLAY_DIVIDER_LAYER,
-        xPercent: -50,
-        yPercent: -50,
-        opacity: 0,
-        force3D: false,
-      });
-    }
-
-    if (image) gsap.set(image, { opacity: 0 });
-    if (surface) gsap.set(surface, { opacity: 1 });
     if (content) gsap.set(content, { opacity: 1, y: 0, pointerEvents: 'auto' });
   }, [measurements, setRestState, viewport.height, viewport.width]);
 
@@ -226,202 +192,75 @@ export default function FolderStack() {
     });
     timelineRef.current = tl;
 
-    // CLOSE ---------------------------------------------------------------
+    // CLOSE -----------------------------------------------------------
+    // The sheet shrinks straight back down onto its own resting spot —
+    // real width/height, not a transform scale, so the paper never warps
+    // on the way. Nothing else on the stack was ever touched, so nothing
+    // else needs to animate back.
     if (from >= 0 && to < 0) {
-      const image = sheetImageRefs.current[from];
-      const surface = surfaceRefs.current[from];
       const content = contentRefs.current[from];
-      const selectedDivider = dividerRefs.current[from];
       const selectedSheet = sheetRefs.current[from];
       const m = measurements[from];
-
-      const fullWidth = viewport.width + 2;
-      const fullHeight = viewport.height + 2;
-      const dividerDrop = Math.min(190, viewport.height * 0.2);
-      const dividerEntryY = m.divider.y + Math.max(dividerDrop, viewport.height * 0.42);
-      const returnStart = t(0.2);
-      const returnDuration = t(0.84);
-
-      // All the other folders are already sitting in their exact homepage
-      // positions underneath the fullscreen paper. Nothing else “rebuilds” on
-      // close: only this divider and this sheet move.
-      setNonSelectedRest(from);
-
-      gsap.set(selectedSheet, {
-        zIndex: OVERLAY_SHEET_LAYER,
-        width: fullWidth,
-        height: fullHeight,
-        xPercent: -50,
-        yPercent: -50,
-        force3D: false,
-      });
-      gsap.set(selectedDivider, {
-        ...m.divider,
-        xPercent: -50,
-        yPercent: -50,
-        y: dividerEntryY,
-        z: 0,
-        zIndex: OVERLAY_DIVIDER_LAYER,
-        opacity: 0,
-        force3D: false,
-      });
+      const duration = t(TIMING.close);
+      const shrinkStart = t(0.12);
 
       tl.set(content, { pointerEvents: 'none' }, 0)
         .to(content, { opacity: 0, y: 10, duration: t(0.18), ease: EASE.exit }, 0)
-        .to(surface, { opacity: 0, duration: t(0.24), ease: EASE.exit }, t(0.02))
-        .to(image, { opacity: 1, duration: t(0.3), ease: 'sine.out' }, t(0.04))
-        .to(selectedDivider, {
-          y: m.divider.y + dividerDrop,
-          opacity: 1,
-          duration: t(0.34),
-          ease: 'power3.out',
-          force3D: false,
-        }, t(0.03))
         .to(selectedSheet, {
           x: m.sheet.x,
           y: m.sheet.y,
-          z: 0,
-          scaleX: m.sheet.width / fullWidth,
-          scaleY: m.sheet.height / fullHeight,
-          opacity: 1,
-          duration: returnDuration,
+          width: m.sheet.width,
+          height: m.sheet.height,
+          duration,
           ease: EASE.standard,
           force3D: false,
-        }, returnStart)
-        .to(selectedDivider, {
-          y: m.divider.y,
-          opacity: 1,
-          duration: returnDuration,
-          ease: EASE.standard,
-          force3D: false,
-        }, returnStart)
+        }, shrinkStart)
         .add(() => {
-          // The pair reaches its exact closed geometry before we restore its
-          // normal stacking level. The z-index swap therefore reveals the
-          // already-stationary front folders with no crossover animation.
+          // Reached its exact resting geometry before the stacking level
+          // resets, so this never flashes behind an already-static
+          // neighbour mid-shrink.
           setPairRest(from);
-        }, returnStart + returnDuration + t(0.01));
+        }, shrinkStart + duration + t(0.01));
 
       return () => tl.kill();
     }
 
-    // OPEN ---------------------------------------------------------------
+    // OPEN --------------------------------------------------------------
+    // One continuous, uncut growth: real width/height (not scale), so the
+    // paper's own asset just gets more of itself cropped in via object-fit
+    // as its box stretches toward the screen — flat colour, so that crop
+    // is invisible. The divider it came from, and every other pair, never
+    // move; only the selected sheet rises above them (z-index) and grows.
     if (from < 0 && to >= 0) {
-      const selectedDivider = dividerRefs.current[to];
       const selectedSheet = sheetRefs.current[to];
-      const selectedImage = sheetImageRefs.current[to];
-      const selectedSurface = surfaceRefs.current[to];
       const selectedContent = contentRefs.current[to];
-      const m = measurements[to];
+      const duration = t(TIMING.open);
 
-      const dividerDrop = Math.min(190, viewport.height * 0.2);
-      const separationDuration = t(0.52);
-      const frontExitStart = t(0.22);
-      const frontExitDuration = t(0.34);
-      const zoomStart = t(0.58);
-      const zoomDuration = t(0.86);
-      const fullWidth = viewport.width + 2;
-      const fullHeight = viewport.height + 2;
-
-      // First beat: lower the divider in front of the chosen paper. It stays
-      // above its own sheet for the entire transition.
-      tl.to(selectedDivider, {
-        y: m.divider.y + dividerDrop,
-        duration: separationDuration,
-        ease: 'power3.out',
-        force3D: false,
-      }, 0);
-
-      // Only layers physically in front of the selected section briefly clear
-      // the path. They use flat 2D motion + opacity; no element ever travels
-      // through another element's Z plane.
-      SECTIONS.forEach((_, index) => {
-        if (index <= to) return;
-        const frontY = Math.min(54, viewport.height * 0.065);
-        tl.to(dividerRefs.current[index], {
-          y: measurements[index].divider.y + frontY,
-          opacity: 0,
-          duration: frontExitDuration,
-          ease: 'power2.inOut',
-          force3D: false,
-        }, frontExitStart);
-        tl.to(sheetRefs.current[index], {
-          y: measurements[index].sheet.y + frontY,
-          opacity: 0,
-          duration: frontExitDuration,
-          ease: 'power2.inOut',
-          force3D: false,
-        }, frontExitStart);
-      });
-
-      // Once the front layers are practically gone, lift only the selected
-      // pair to a temporary overlay level. The divider remains exactly one
-      // layer above the paper, so the paper can never flash in front of it.
-      tl.set(selectedSheet, { zIndex: OVERLAY_SHEET_LAYER }, zoomStart);
-      tl.set(selectedDivider, { zIndex: OVERLAY_DIVIDER_LAYER }, zoomStart);
-
-      // Freeze the sheet box at fullscreen dimensions once, then animate only
-      // transforms. This avoids frame-by-frame layout work while zooming.
-      tl.set(selectedSheet, {
-        width: fullWidth,
-        height: fullHeight,
-        scaleX: m.sheet.width / fullWidth,
-        scaleY: m.sheet.height / fullHeight,
-        xPercent: -50,
-        yPercent: -50,
-        force3D: false,
-      }, zoomStart);
+      tl.set(selectedSheet, { zIndex: OVERLAY_SHEET_LAYER }, 0);
 
       tl.to(selectedSheet, {
         x: 0,
         y: 0,
-        z: 0,
-        scaleX: 1,
-        scaleY: 1,
-        opacity: 1,
-        duration: zoomDuration,
+        width: viewport.width,
+        height: viewport.height,
+        duration,
         ease: EASE.standard,
         force3D: false,
-      }, zoomStart);
+      }, 0);
 
-      // The divider keeps leading the paper while it exits downward. It never
-      // crosses behind the sheet; it simply leaves the viewport and fades.
-      tl.to(selectedDivider, {
-        y: m.divider.y + viewport.height * 0.82,
-        opacity: 0,
-        duration: t(0.7),
-        ease: 'power3.inOut',
-        force3D: false,
-      }, zoomStart + t(0.02));
-
-      tl.to(selectedImage, {
-        opacity: 0,
-        duration: t(TIMING.surface),
-        ease: EASE.exit,
-      }, zoomStart + t(0.36));
-      tl.to(selectedSurface, {
-        opacity: 1,
-        duration: t(TIMING.surface),
-        ease: EASE.enter,
-      }, zoomStart + t(0.34));
-      tl.set(selectedContent, { pointerEvents: 'auto' }, zoomStart + t(0.5));
+      tl.set(selectedContent, { pointerEvents: 'auto' }, duration * 0.6);
       tl.to(selectedContent, {
         opacity: 1,
         y: 0,
         duration: t(TIMING.content),
         ease: EASE.enter,
-      }, zoomStart + t(0.54));
-
-      // As soon as the fullscreen paper is opaque enough to hide the stack,
-      // silently put every other layer back at rest. This is why closing later
-      // does not have to make the folders “settle back in” one by one.
-      tl.add(() => setNonSelectedRest(to), zoomStart + zoomDuration + t(0.02));
+      }, duration * 0.62);
 
       return () => tl.kill();
     }
 
     return () => tl.kill();
-  }, [activeIndex, measurements, setNonSelectedRest, setPairRest, viewport.height, viewport.width]);
+  }, [activeIndex, measurements, setPairRest, viewport.height, viewport.width]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -477,8 +316,6 @@ export default function FolderStack() {
                 isActive={activeIndex === index}
                 disabled={isAnimating || Boolean(activeId)}
                 onSelect={openSection}
-                imageRef={(el) => { sheetImageRefs.current[index] = el; }}
-                surfaceRef={(el) => { surfaceRefs.current[index] = el; }}
                 contentRef={(el) => { contentRefs.current[index] = el; }}
               >
                 <SectionPage title={section.label} onClose={closeSection} disabled={isAnimating}>
