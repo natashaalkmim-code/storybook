@@ -135,13 +135,9 @@
   background: transparent;
 }
 
-/* About sits on its own dark sheet — flip the content palette to light so
-   text stays legible once that sheet fills the screen. */
-.sheet-plane--dark .sheet-plane__content {
-  --ink: #f4f2f6;
-  --ink-soft: #cdc6d4;
-  --line: rgba(244, 242, 246, 0.22);
-}
+/* About's sheetTone stays "dark" as an identifier, but the asset itself
+   is white now, so its content uses the normal (dark) ink — no override
+   needed here anymore. */
 
 .sheet-plane.is-active { pointer-events: auto; }
 
