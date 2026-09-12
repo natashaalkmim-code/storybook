@@ -10,6 +10,7 @@ const Sheet = forwardRef(function Sheet(
     surfaceRef,
     imageRef,
     contentRef,
+    tiltRef,
   },
   ref
 ) {
@@ -33,18 +34,20 @@ const Sheet = forwardRef(function Sheet(
         if (event.target === event.currentTarget) activateSheet();
       }}
     >
-      <img
-        ref={imageRef}
-        className="sheet-plane__asset"
-        src={section.sheetImage}
-        alt=""
-        draggable="false"
-        style={{
-          objectFit: section.sheetFit ?? 'contain',
-          objectPosition: section.sheetObjectPosition ?? '50% 50%',
-          transform: rotation,
-        }}
-      />
+      <div ref={tiltRef} className="sheet-plane__tilt">
+        <img
+          ref={imageRef}
+          className="sheet-plane__asset"
+          src={section.sheetImage}
+          alt=""
+          draggable="false"
+          style={{
+            objectFit: section.sheetFit ?? 'contain',
+            objectPosition: section.sheetObjectPosition ?? '50% 50%',
+            transform: rotation,
+          }}
+        />
+      </div>
 
       {!isActive && (
         <button
