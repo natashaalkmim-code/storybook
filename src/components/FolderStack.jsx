@@ -4,7 +4,6 @@ import gsap from 'gsap';
 import { SECTIONS, getSectionIndex } from '../data/sections';
 import { PAGE_COMPONENTS } from '../pages';
 import { EASE, TIMING, measureScene, resolveStackConfig } from '../config/stackConfig';
-import { useSheetSway } from '../hooks/useSheetSway';
 import Divider from './Divider';
 import Sheet from './Sheet';
 import SectionPage from './SectionPage';
@@ -60,7 +59,6 @@ export default function FolderStack() {
   const dividerRefs = useRef([]);
   const sheetRefs = useRef([]);
   const sheetImageRefs = useRef([]);
-  const tiltRefs = useRef([]);
   const surfaceRefs = useRef([]);
   const contentRefs = useRef([]);
   const timelineRef = useRef(null);
@@ -72,10 +70,6 @@ export default function FolderStack() {
     () => SECTIONS.map((section, index) => measureScene(section, index, viewport, config)),
     [viewport, config]
   );
-
-  // Loose sheets sway with phone tilt while the stack is just sitting there
-  // closed — paused the moment a page opens or a transition is running.
-  useSheetSway(tiltRefs, SECTIONS.length, { enabled: !activeId && !isAnimating });
 
   const setPairRest = useCallback((index) => {
     const d = dividerRefs.current[index];
@@ -484,7 +478,6 @@ export default function FolderStack() {
                 disabled={isAnimating || Boolean(activeId)}
                 onSelect={openSection}
                 imageRef={(el) => { sheetImageRefs.current[index] = el; }}
-                tiltRef={(el) => { tiltRefs.current[index] = el; }}
                 surfaceRef={(el) => { surfaceRefs.current[index] = el; }}
                 contentRef={(el) => { contentRefs.current[index] = el; }}
               >
