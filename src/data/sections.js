@@ -49,11 +49,11 @@ export const SECTIONS = [
     shoulderYRatio: 119 / 1792,
     tabX: 0.315,
 
-    // Dark sheet is unchanged.
+    // Dark sheet — sized up 1/3 from the original.
     sheetImage: '/assets/sheets/sheet-dark.png',
     sheetRatio: 1234 / 787,
-    sheetWidthRatio: 0.67,
-    sheetWidthMax: 1260,
+    sheetWidthRatio: 0.8933,
+    sheetWidthMax: 1680,
     sheetXRatio: 0.13,
     sheetTopRatio: 0.492,
     sheetFit: 'contain',
