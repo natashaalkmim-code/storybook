@@ -261,28 +261,45 @@ export default function FolderStack() {
     }
 
     // OPEN --------------------------------------------------------------
-    // One continuous, uncut growth. The flat colour panel — not the tilted
-    // artwork — is what grows, so it's a clean right angle from the very
-    // first frame; the divider it came from, and every other pair, never
-    // move. Only the selected sheet rises above them (z-index) and grows.
+    // Mirrors CLOSE: it starts at its normal stacking level — behind its
+    // own divider, same as every other pair — lifts up and out from that
+    // slot first, and only rises above the stack (z-index) once it's clear
+    // of it. Only then does it grow to fill the screen. The flat colour
+    // panel, not the tilted artwork, is what moves, so it's a clean right
+    // angle throughout; the divider it came from, and every other pair,
+    // never move.
     if (from < 0 && to >= 0) {
       const selectedSheet = sheetRefs.current[to];
       const selectedImage = sheetImageRefs.current[to];
       const selectedPanel = panelRefs.current[to];
       const selectedContent = contentRefs.current[to];
       const duration = t(TIMING.open);
+      const liftOffset = Math.min(70, viewport.height * 0.06);
+      const liftDuration = duration * 0.22;
+      const growStart = liftDuration;
+      const growDuration = duration - liftDuration;
 
-      tl.set(selectedSheet, { zIndex: OVERLAY_SHEET_LAYER }, 0);
+      // Still tucked behind its own divider here — this is the "sliding out
+      // from between the folders" beat.
+      tl.to(selectedSheet, {
+        y: `-=${liftOffset}`,
+        duration: liftDuration,
+        ease: 'power2.out',
+        force3D: false,
+      }, 0);
+
+      // Clear of the stack now — safe to rise above everything and grow.
+      tl.set(selectedSheet, { zIndex: OVERLAY_SHEET_LAYER }, growStart);
 
       tl.to(selectedSheet, {
         x: 0,
         y: 0,
         width: viewport.width,
         height: viewport.height,
-        duration,
+        duration: growDuration,
         ease: EASE.standard,
         force3D: false,
-      }, 0);
+      }, growStart);
 
       tl.to(selectedPanel, { opacity: 1, duration: t(0.16), ease: EASE.enter }, 0);
       tl.to(selectedImage, { opacity: 0, duration: t(0.16), ease: EASE.exit }, 0);

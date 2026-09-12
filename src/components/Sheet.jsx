@@ -1,6 +1,9 @@
 import { forwardRef } from 'react';
 
-const PANEL_COLOR = { light: '#e6e6eb', dark: '#2b2528' };
+// `sheetTone: 'dark'` is a naming/identity flag for the About section (kept
+// as-is), not a literal instruction to render dark — the asset itself is
+// now white, so the panel colour it maps to is white too.
+const PANEL_COLOR = { light: '#e6e6eb', dark: '#ffffff' };
 
 const Sheet = forwardRef(function Sheet(
   {
