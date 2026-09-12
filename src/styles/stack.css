@@ -85,6 +85,7 @@
 }
 
 .sheet-plane__asset,
+.sheet-plane__panel,
 .sheet-plane__hit,
 .sheet-plane__content {
   position: absolute;
@@ -96,6 +97,11 @@
 .sheet-plane__asset {
   object-fit: contain;
   user-select: none;
+  pointer-events: none;
+}
+
+.sheet-plane__panel {
+  opacity: 0;
   pointer-events: none;
 }
 
