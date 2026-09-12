@@ -86,7 +86,6 @@
 
 .sheet-plane__asset,
 .sheet-plane__hit,
-.sheet-plane__surface,
 .sheet-plane__content {
   position: absolute;
   inset: 0;
@@ -119,13 +118,6 @@
   cursor: default;
 }
 
-.sheet-plane__surface {
-  opacity: 0;
-  background: var(--paper);
-  box-shadow: 0 24px 80px rgba(10, 7, 12, 0.32);
-  pointer-events: none;
-}
-
 .sheet-plane__content {
   opacity: 0;
   overflow: auto;
@@ -135,6 +127,14 @@
   pointer-events: none;
   color: var(--ink);
   background: transparent;
+}
+
+/* About sits on its own dark sheet — flip the content palette to light so
+   text stays legible once that sheet fills the screen. */
+.sheet-plane--dark .sheet-plane__content {
+  --ink: #f4f2f6;
+  --ink-soft: #cdc6d4;
+  --line: rgba(244, 242, 246, 0.22);
 }
 
 .sheet-plane.is-active { pointer-events: auto; }
