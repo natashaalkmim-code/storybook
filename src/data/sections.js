@@ -57,6 +57,7 @@ export const SECTIONS = [
     sheetXRatio: 0.13,
     sheetTopRatio: 0.492,
     sheetFit: 'contain',
+    sheetTone: 'dark',
     sheetHitClip: 'polygon(4.6% 0%, 100% 12.3%, 95.3% 100%, 0% 87.5%)',
   },
   {
