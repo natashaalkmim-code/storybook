@@ -4,6 +4,7 @@ import gsap from 'gsap';
 import { SECTIONS, getSectionIndex } from '../data/sections';
 import { PAGE_COMPONENTS } from '../pages';
 import { EASE, TIMING, measureScene, resolveStackConfig } from '../config/stackConfig';
+import { useSheetSway } from '../hooks/useSheetSway';
 import Divider from './Divider';
 import Sheet from './Sheet';
 import SectionPage from './SectionPage';
@@ -59,18 +60,22 @@ export default function FolderStack() {
   const dividerRefs = useRef([]);
   const sheetRefs = useRef([]);
   const sheetImageRefs = useRef([]);
+  const tiltRefs = useRef([]);
   const surfaceRefs = useRef([]);
   const contentRefs = useRef([]);
   const timelineRef = useRef(null);
   const previousActiveRef = useRef(activeIndex);
   const mountedRef = useRef(false);
-  const introPlayedRef = useRef(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
   const measurements = useMemo(
     () => SECTIONS.map((section, index) => measureScene(section, index, viewport, config)),
     [viewport, config]
   );
+
+  // Loose sheets sway with phone tilt while the stack is just sitting there
+  // closed — paused the moment a page opens or a transition is running.
+  useSheetSway(tiltRefs, SECTIONS.length, { enabled: !activeId && !isAnimating });
 
   const setPairRest = useCallback((index) => {
     const d = dividerRefs.current[index];
@@ -182,7 +187,6 @@ export default function FolderStack() {
     if (timelineRef.current) timelineRef.current.kill();
 
     const isFirstMount = !mountedRef.current;
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     if (activeIndex >= 0) {
       setOpenState(activeIndex);
@@ -191,116 +195,9 @@ export default function FolderStack() {
       return undefined;
     }
 
+    // Dividers and loose sheets land straight in their final, fully visible
+    // position — no staggered/cascading entrance on load.
     setRestState();
-
-    if (!introPlayedRef.current && !reduceMotion) {
-      // The artwork is deliberately flattened into integer CSS layers. Each
-      // sheet is always one layer behind its own divider, so the intro cannot
-      // generate 3D crossover flashes while the PNGs are being composited.
-      const revealOrder = SECTIONS.map((_, index) => index).reverse();
-
-      revealOrder.forEach((index) => {
-        const d = dividerRefs.current[index];
-        const s = sheetRefs.current[index];
-        const m = measurements[index];
-
-        if (d) {
-          gsap.set(d, {
-            y: m.divider.y - 20,
-            opacity: 0,
-            scale: 0.988,
-            zIndex: dividerLayer(index),
-            force3D: false,
-          });
-        }
-        if (s) {
-          gsap.set(s, {
-            y: m.sheet.y - 13,
-            opacity: 0,
-            scaleX: 0.992,
-            scaleY: 0.992,
-            zIndex: sheetLayer(index),
-            force3D: false,
-          });
-        }
-      });
-
-      mountedRef.current = true;
-      stageRef.current?.classList.add('is-ready');
-
-      let cancelled = false;
-      let intro = null;
-
-      const startIntro = () => {
-        if (cancelled) return;
-        introPlayedRef.current = true;
-
-        intro = gsap.timeline({
-          onStart: () => setIsAnimating(true),
-          onComplete: () => {
-            setRestState();
-            setIsAnimating(false);
-            timelineRef.current = null;
-          },
-        });
-        timelineRef.current = intro;
-
-        revealOrder.forEach((index, orderIndex) => {
-          const m = measurements[index];
-          const start = orderIndex * 0.13;
-
-          // Each section arrives as one layer: divider first, loose paper a few
-          // frames later, then both make a tiny final settle instead of stopping
-          // abruptly. This gives the “terminando de assentar” feeling.
-          intro.to(dividerRefs.current[index], {
-            y: m.divider.y + 3,
-            opacity: 1,
-            scale: 1,
-            duration: 0.58,
-            ease: 'power3.out',
-            force3D: false,
-          }, start);
-          intro.to(dividerRefs.current[index], {
-            y: m.divider.y,
-            duration: 0.2,
-            ease: 'sine.inOut',
-            force3D: false,
-          }, start + 0.5);
-
-          intro.to(sheetRefs.current[index], {
-            y: m.sheet.y + 2,
-            opacity: 1,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 0.66,
-            ease: 'power3.out',
-            force3D: false,
-          }, start + 0.055);
-          intro.to(sheetRefs.current[index], {
-            y: m.sheet.y,
-            duration: 0.22,
-            ease: 'sine.inOut',
-            force3D: false,
-          }, start + 0.57);
-        });
-      };
-
-      const images = [
-        ...dividerRefs.current.map((el) => el?.querySelector('img')),
-        ...sheetImageRefs.current,
-      ].filter(Boolean);
-
-      Promise.allSettled(images.map((img) => (
-        typeof img.decode === 'function' ? img.decode().catch(() => undefined) : Promise.resolve()
-      ))).then(() => requestAnimationFrame(startIntro));
-
-      return () => {
-        cancelled = true;
-        intro?.kill();
-      };
-    }
-
-    if (reduceMotion) introPlayedRef.current = true;
 
     if (isFirstMount) {
       mountedRef.current = true;
@@ -587,6 +484,7 @@ export default function FolderStack() {
                 disabled={isAnimating || Boolean(activeId)}
                 onSelect={openSection}
                 imageRef={(el) => { sheetImageRefs.current[index] = el; }}
+                tiltRef={(el) => { tiltRefs.current[index] = el; }}
                 surfaceRef={(el) => { surfaceRefs.current[index] = el; }}
                 contentRef={(el) => { contentRefs.current[index] = el; }}
               >
