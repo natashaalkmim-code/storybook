@@ -1,5 +1,7 @@
 import { forwardRef } from 'react';
 
+const PANEL_COLOR = { light: '#e6e6eb', dark: '#2b2528' };
+
 const Sheet = forwardRef(function Sheet(
   {
     section,
@@ -7,6 +9,8 @@ const Sheet = forwardRef(function Sheet(
     isActive,
     disabled,
     onSelect,
+    imageRef,
+    panelRef,
     contentRef,
   },
   ref
@@ -14,6 +18,7 @@ const Sheet = forwardRef(function Sheet(
   const rotation = section.sheetImageRotation
     ? `rotate(${section.sheetImageRotation}deg)`
     : undefined;
+  const panelColor = section.sheetTone === 'dark' ? PANEL_COLOR.dark : PANEL_COLOR.light;
 
   const activateSheet = () => {
     if (!isActive && !disabled) onSelect(section.id);
@@ -31,25 +36,32 @@ const Sheet = forwardRef(function Sheet(
         if (event.target === event.currentTarget) activateSheet();
       }}
     >
+      {/* The real, tilted paper artwork — what you see in the closed stack. */}
       <img
+        ref={imageRef}
         className="sheet-plane__asset"
         src={section.sheetImage}
         alt=""
         draggable="false"
         style={{
-          // At rest the plane's own aspect ratio always matches the asset's
-          // (see measureScene), so cover never crops anything here — it only
-          // kicks in once the plane's box stretches toward the fullscreen
-          // aspect ratio while opening, where it crops the flat paper
-          // instead of letterboxing/distorting it. The extra scale(1.5) only
-          // applies once open: it pushes the asset's own rotated-corner
-          // transparency (baked into the PNG) safely outside the frame,
-          // since a cover crop alone isn't always enough margin when the
-          // viewport's aspect ratio happens to sit close to the asset's own.
-          objectFit: 'cover',
+          objectFit: 'contain',
           objectPosition: section.sheetObjectPosition ?? '50% 50%',
-          transform: isActive ? 'scale(2.2)' : rotation,
+          transform: rotation,
         }}
+      />
+
+      {/* A flat, colour-matched stand-in used only while opening/open/closing.
+          The rotation is baked into the PNG's pixels, so growing the image
+          itself toward a fullscreen, axis-aligned rectangle would either
+          warp it or leak its transparent corners. This panel is the exact
+          measured colour of that same paper, so the swap (timed in
+          FolderStack, not here) is effectively invisible — but it can grow
+          to any size/aspect ratio as a clean right angle, with nothing to
+          mask. */}
+      <div
+        ref={panelRef}
+        className="sheet-plane__panel"
+        style={{ background: panelColor }}
       />
 
       {!isActive && (

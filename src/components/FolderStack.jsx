@@ -57,6 +57,8 @@ export default function FolderStack() {
   const stackRef = useRef(null);
   const dividerRefs = useRef([]);
   const sheetRefs = useRef([]);
+  const sheetImageRefs = useRef([]);
+  const panelRefs = useRef([]);
   const contentRefs = useRef([]);
   const timelineRef = useRef(null);
   const previousActiveRef = useRef(activeIndex);
@@ -74,6 +76,8 @@ export default function FolderStack() {
   const setPairRest = useCallback((index) => {
     const d = dividerRefs.current[index];
     const s = sheetRefs.current[index];
+    const image = sheetImageRefs.current[index];
+    const panel = panelRefs.current[index];
     const content = contentRefs.current[index];
     const m = measurements[index];
 
@@ -102,6 +106,10 @@ export default function FolderStack() {
       });
     }
 
+    // Resting state always shows the real, tilted paper artwork. The flat
+    // colour panel only exists for the open/close journey.
+    if (image) gsap.set(image, { opacity: 1 });
+    if (panel) gsap.set(panel, { opacity: 0 });
     if (content) gsap.set(content, { opacity: 0, y: 16, pointerEvents: 'none' });
   }, [measurements]);
 
@@ -123,6 +131,8 @@ export default function FolderStack() {
     setRestState();
 
     const selected = sheetRefs.current[index];
+    const image = sheetImageRefs.current[index];
+    const panel = panelRefs.current[index];
     const content = contentRefs.current[index];
 
     if (selected) {
@@ -140,6 +150,8 @@ export default function FolderStack() {
       });
     }
 
+    if (image) gsap.set(image, { opacity: 0 });
+    if (panel) gsap.set(panel, { opacity: 1 });
     if (content) gsap.set(content, { opacity: 1, y: 0, pointerEvents: 'auto' });
   }, [measurements, setRestState, viewport.height, viewport.width]);
 
@@ -193,32 +205,55 @@ export default function FolderStack() {
     timelineRef.current = tl;
 
     // CLOSE -----------------------------------------------------------
-    // The sheet shrinks straight back down onto its own resting spot —
-    // real width/height, not a transform scale, so the paper never warps
-    // on the way. Nothing else on the stack was ever touched, so nothing
-    // else needs to animate back.
+    // Drops straight down out of fullscreen and tucks back in behind its
+    // own divider (and whatever else already sits in front of it in the
+    // stack) — the z-index resets the moment the shrink starts, not after,
+    // so the divider genuinely covers it on the way down like a page
+    // sliding back under a folder tab. The flat colour panel is what
+    // actually moves; it swaps back to the real, tilted artwork only once
+    // it's essentially home.
     if (from >= 0 && to < 0) {
       const content = contentRefs.current[from];
+      const image = sheetImageRefs.current[from];
+      const panel = panelRefs.current[from];
       const selectedSheet = sheetRefs.current[from];
       const m = measurements[from];
       const duration = t(TIMING.close);
-      const shrinkStart = t(0.12);
+      const shrinkStart = t(0.08);
+      const dropPortion = 0.62;
+      const settlePortion = 0.38;
+      const overshoot = Math.min(70, viewport.height * 0.06);
 
       tl.set(content, { pointerEvents: 'none' }, 0)
         .to(content, { opacity: 0, y: 10, duration: t(0.18), ease: EASE.exit }, 0)
+        .set(selectedSheet, { zIndex: sheetLayer(from) }, shrinkStart)
         .to(selectedSheet, {
           x: m.sheet.x,
-          y: m.sheet.y,
           width: m.sheet.width,
           height: m.sheet.height,
           duration,
           ease: EASE.standard,
           force3D: false,
         }, shrinkStart)
+        // Falls past its resting spot first, then settles down into it —
+        // the last beat of motion always reads top-to-bottom.
+        .to(selectedSheet, {
+          y: m.sheet.y - overshoot,
+          duration: duration * dropPortion,
+          ease: 'power2.in',
+          force3D: false,
+        }, shrinkStart)
+        .to(selectedSheet, {
+          y: m.sheet.y,
+          duration: duration * settlePortion,
+          ease: 'power2.out',
+          force3D: false,
+        }, shrinkStart + duration * dropPortion)
+        .to(panel, { opacity: 0, duration: t(0.3), ease: EASE.exit }, shrinkStart + duration * 0.7)
+        .to(image, { opacity: 1, duration: t(0.3), ease: EASE.enter }, shrinkStart + duration * 0.7)
         .add(() => {
-          // Reached its exact resting geometry before the stacking level
-          // resets, so this never flashes behind an already-static
-          // neighbour mid-shrink.
+          // Reached its exact resting geometry before anything else resets,
+          // so this never flashes or jumps once settled.
           setPairRest(from);
         }, shrinkStart + duration + t(0.01));
 
@@ -226,13 +261,14 @@ export default function FolderStack() {
     }
 
     // OPEN --------------------------------------------------------------
-    // One continuous, uncut growth: real width/height (not scale), so the
-    // paper's own asset just gets more of itself cropped in via object-fit
-    // as its box stretches toward the screen — flat colour, so that crop
-    // is invisible. The divider it came from, and every other pair, never
-    // move; only the selected sheet rises above them (z-index) and grows.
+    // One continuous, uncut growth. The flat colour panel — not the tilted
+    // artwork — is what grows, so it's a clean right angle from the very
+    // first frame; the divider it came from, and every other pair, never
+    // move. Only the selected sheet rises above them (z-index) and grows.
     if (from < 0 && to >= 0) {
       const selectedSheet = sheetRefs.current[to];
+      const selectedImage = sheetImageRefs.current[to];
+      const selectedPanel = panelRefs.current[to];
       const selectedContent = contentRefs.current[to];
       const duration = t(TIMING.open);
 
@@ -247,6 +283,9 @@ export default function FolderStack() {
         ease: EASE.standard,
         force3D: false,
       }, 0);
+
+      tl.to(selectedPanel, { opacity: 1, duration: t(0.16), ease: EASE.enter }, 0);
+      tl.to(selectedImage, { opacity: 0, duration: t(0.16), ease: EASE.exit }, 0);
 
       tl.set(selectedContent, { pointerEvents: 'auto' }, duration * 0.6);
       tl.to(selectedContent, {
@@ -316,6 +355,8 @@ export default function FolderStack() {
                 isActive={activeIndex === index}
                 disabled={isAnimating || Boolean(activeId)}
                 onSelect={openSection}
+                imageRef={(el) => { sheetImageRefs.current[index] = el; }}
+                panelRef={(el) => { panelRefs.current[index] = el; }}
                 contentRef={(el) => { contentRefs.current[index] = el; }}
               >
                 <SectionPage title={section.label} onClose={closeSection} disabled={isAnimating}>
