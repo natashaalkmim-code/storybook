@@ -54,7 +54,7 @@ export const SECTIONS = [
     sheetRatio: 1234 / 787,
     sheetWidthRatio: 0.8933,
     sheetWidthMax: 1680,
-    sheetXRatio: 0.13,
+    sheetXRatio: 0,
     sheetTopRatio: 0.492,
     sheetFit: 'contain',
     sheetTone: 'dark',
